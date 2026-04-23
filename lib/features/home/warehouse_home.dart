@@ -9,7 +9,7 @@ class WarehouseHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("WarehouseHomeScreen"),
+        title: const Text("Warehouse"),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -19,8 +19,118 @@ class WarehouseHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Text("Warehouse Dashboard"),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildStats(),
+            const SizedBox(height: 20),
+            _buildShipmentList(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🔹 QUICK STATS
+  Widget _buildStats() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: const [
+        StatBox(title: "Incoming", value: "4"),
+        StatBox(title: "Stored", value: "18"),
+        StatBox(title: "Dispatched", value: "10"),
+      ],
+    );
+  }
+
+  // 🔹 SHIPMENT LIST
+  Widget _buildShipmentList(BuildContext context) {
+    return Expanded(
+      child: ListView(
+        children: [
+          ShipmentItem(
+            id: "#UAE-992",
+            temp: "2.1°C",
+            status: "Arrived",
+          ),
+          ShipmentItem(
+            id: "#UAE-993",
+            temp: "5.8°C",
+            status: "Warning",
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 🔹 STAT BOX
+class StatBox extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const StatBox({super.key, required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 SHIPMENT ITEM
+class ShipmentItem extends StatelessWidget {
+  final String id;
+  final String temp;
+  final String status;
+
+  const ShipmentItem({
+    super.key,
+    required this.id,
+    required this.temp,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isGood = temp.contains("2") || temp.contains("3");
+
+    return Card(
+      child: ListTile(
+        title: Text(id),
+        subtitle: Text("Temp: $temp"),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              status,
+              style: TextStyle(
+                color: isGood
+                    ? Theme.of(context).colorScheme.secondary
+                    : Colors.red,
+              ),
+            ),
+            const SizedBox(height: 4),
+            ElevatedButton(
+              onPressed: () {},
+              child: const Text("Accept"),
+            ),
+          ],
+        ),
       ),
     );
   }

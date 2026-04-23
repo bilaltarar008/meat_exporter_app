@@ -19,8 +19,94 @@ class SlaughterhouseHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Text("Slaughterhouse Dashboard"),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: const Icon(Icons.add),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildActions(context),
+            const SizedBox(height: 20),
+            _buildBatchList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🔹 ACTION BUTTONS
+  Widget _buildActions(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: const [
+        ActionCard(title: "New Batch", icon: Icons.add_box),
+        ActionCard(title: "QC Check", icon: Icons.check_circle),
+        ActionCard(title: "Upload Docs", icon: Icons.upload),
+      ],
+    );
+  }
+
+  // 🔹 ACTIVE BATCHES
+  Widget _buildBatchList() {
+    return Expanded(
+      child: ListView(
+        children: const [
+          BatchItem(id: "#PK-221", weight: "120kg", status: "Processed"),
+          BatchItem(id: "#PK-222", weight: "95kg", status: "Pending QC"),
+        ],
+      ),
+    );
+  }
+}
+
+// 🔹 ACTION CARD
+class ActionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const ActionCard({super.key, required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Icon(icon, size: 28),
+              const SizedBox(height: 6),
+              Text(title, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 BATCH ITEM
+class BatchItem extends StatelessWidget {
+  final String id;
+  final String weight;
+  final String status;
+
+  const BatchItem({
+    super.key,
+    required this.id,
+    required this.weight,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(id),
+        subtitle: Text("Weight: $weight"),
+        trailing: Text(status),
       ),
     );
   }
