@@ -1,66 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import '../../core/auth/auth_provider.dart';
-//
-// class OwnerHomeScreen extends ConsumerWidget {
-//   const OwnerHomeScreen({super.key});
-//
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Owner Dashboard"),
-//         actions: [
-//           IconButton(
-//             icon: const Icon(Icons.logout),
-//             onPressed: () {
-//               ref.read(authProvider.notifier).state = null;
-//             },
-//           ),
-//         ],
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16),
-//         child: Column(
-//           children: [
-//             _buildKPI("Active Shipments", "12"),
-//             _buildKPI("In Transit", "5"),
-//             _buildKPI("Delivered", "20"),
-//             _buildKPI("Alerts", "2"),
-//
-//             const SizedBox(height: 20),
-//
-//             _buildCard("Shipment #UAE-992", "Karachi → Dubai", "2.1°C"),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Widget _buildKPI(String title, String value) {
-//     return Card(
-//       child: ListTile(
-//         title: Text(title),
-//         trailing: Text(
-//           value,
-//           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Widget _buildCard(String title, String route, String temp) {
-//     return Card(
-//       child: ListTile(
-//         title: Text(title),
-//         subtitle: Text(route),
-//         trailing: Text(temp),
-//       ),
-//     );
-//   }
-// }
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -87,52 +24,79 @@ class OwnerHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(),
-              SizedBox(height: 20.h),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
-              _buildKPIGrid(),
-              SizedBox(height: 20.h),
+                /// 🔹 HEADER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Welcome, Onwer",
+                        style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
+                    const Icon(Icons.notifications),
+                  ],
+                ),
 
-              ElevatedButton(
-                onPressed: () async {
-                  await db.insertShipment(
-                    ShipmentsCompanion.insert(
-                      id: DateTime.now().toString(),
-                      origin: "Karachi",
-                      destination: "Dubai",
-                      temperature: 2.5,
-                      status: "In Transit",
-                    ),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("Shipment Added"),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                child: Text("Add Shipment", style: TextStyle(fontSize: 14.sp)),
-              ),
+                SizedBox(height: 20.h),
 
-              SizedBox(height: 20.h),
+                /// 🔹 KPI GRID
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12.w,
+                  mainAxisSpacing: 12.h,
+                  children: const [
+                    KPIBox(title: "Active", value: "12"),
+                    KPIBox(title: "In Transit", value: "5"),
+                    KPIBox(title: "Delivered", value: "20"),
+                    KPIBox(title: "Alerts", value: "2"),
+                  ],
+                ),
 
-              _buildShipmentList(ref),
+                SizedBox(height: 20.h),
 
-              SizedBox(height: 20.h),
-              _buildAlerts(),
+                /// 🔹 ACTION BUTTON
 
-              SizedBox(height: 20.h),
-              _buildActivity(),
-            ],
+                SizedBox(height: 20.h),
+
+                /// 🔹 SHIPMENTS LIST (NO EXPANDED)
+                _buildShipmentList(ref),
+
+                SizedBox(height: 20.h),
+
+                /// 🔹 ALERTS
+                Text("Alerts",
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10.h),
+
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.warning, color: Colors.red),
+                    title: const Text("Temperature spike detected"),
+                    subtitle: const Text("Shipment #UAE-221"),
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                /// 🔹 ACTIVITY
+                Text("Recent Activity",
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10.h),
+
+                const ActivityItem(text: "AWB uploaded"),
+                const ActivityItem(text: "Shipment departed"),
+
+                SizedBox(height: 40.h),
+              ],
+            ),
           ),
         ),
-      ),
     );
   }
 
@@ -168,32 +132,43 @@ class OwnerHomeScreen extends ConsumerWidget {
   Widget _buildShipmentList(WidgetRef ref) {
     final db = ref.watch(dbProvider);
 
-    return StreamBuilder(
-      stream: db.watchShipments(),
+    return FutureBuilder(
+      future: db.getAllShipments(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const CircularProgressIndicator();
+
+        /// 🔄 LOADING
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        final shipments = snapshot.data!;
+        /// ❌ ERROR
+        if (snapshot.hasError) {
+          return const Text("Error loading shipments");
+        }
 
+        final shipments = snapshot.data ?? [];
+
+        /// 📭 EMPTY STATE (THIS IS WHAT YOU WANT)
         if (shipments.isEmpty) {
-          return Text("No shipments yet", style: TextStyle(fontSize: 14.sp));
+          return Padding(
+            padding: EdgeInsets.only(top: 40.h),
+            child: Center(
+              child: Text(
+                "No shipments yet",
+                style: TextStyle(fontSize: 14.sp),
+              ),
+            ),
+          );
         }
 
+        /// ✅ DATA
         return Column(
           children: shipments.map((s) {
             return Card(
               child: ListTile(
-                title: Text(s.id, style: TextStyle(fontSize: 14.sp)),
-                subtitle: Text(
-                  "${s.origin} → ${s.destination}",
-                  style: TextStyle(fontSize: 12.sp),
-                ),
-                trailing: Text(
-                  "${s.temperature}°C",
-                  style: TextStyle(fontSize: 12.sp),
-                ),
+                title: Text(s.id),
+                subtitle: Text("${s.origin} → ${s.destination}"),
+                trailing: Text("${s.temperature}°C"),
               ),
             );
           }).toList(),

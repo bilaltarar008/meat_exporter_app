@@ -10,7 +10,7 @@ class WarehouseHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Warehouse"),
+        title: Text("Warehouse", style: TextStyle(fontSize: 18.sp)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -20,118 +20,165 @@ class WarehouseHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-          padding: EdgeInsets.all(16.w),
-        child: Column(
-          children: [
-            _buildStats(),
-            SizedBox(height: 20.h),
-            _buildShipmentList(context),
-          ],
-        ),
-      ),
-    );
-  }
 
-  // 🔹 QUICK STATS
-  Widget _buildStats() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        StatBox(title: "Incoming", value: "4"),
-        StatBox(title: "Stored", value: "18"),
-        StatBox(title: "Dispatched", value: "10"),
-      ],
-    );
-  }
-
-  // 🔹 SHIPMENT LIST
-  Widget _buildShipmentList(BuildContext context) {
-    return Expanded(
-      child: ListView(
-        children: [
-          ShipmentItem(
-            id: "#UAE-992",
-            temp: "2.1°C",
-            status: "Arrived",
-          ),
-          ShipmentItem(
-            id: "#UAE-993",
-            temp: "5.8°C",
-            status: "Warning",
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// 🔹 STAT BOX
-class StatBox extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const StatBox({super.key, required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Card(
+      body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(12.w),
+          padding: EdgeInsets.all(16.w),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Text(
-            value,
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-          ),
-              Text(title),
+
+              /// 🔹 OVERVIEW
+              Text("Overview",
+                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 12.h),
+
+              Row(
+                children: [
+                  _statCard("Incoming", "4"),
+                  SizedBox(width: 10.w),
+                  _statCard("Stored", "18"),
+                  SizedBox(width: 10.w),
+                  _statCard("Dispatch", "10"),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              /// 🔹 INCOMING SHIPMENTS
+              Text("Incoming Shipments",
+                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 12.h),
+
+              Column(
+                children: [
+                  _shipmentItem("#UAE-992", "2.1°C", true),
+                  _shipmentItem("#UAE-993", "5.8°C", false),
+                  _shipmentItem("#UAE-995", "6.0°C", false),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              /// 🔹 INVENTORY
+              Text("Inventory Summary",
+                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 12.h),
+
+              Row(
+                children: [
+                  _inventoryCard("Total", "1200kg"),
+                  SizedBox(width: 10.w),
+                  _inventoryCard("Capacity", "2000kg"),
+                  SizedBox(width: 10.w),
+                  _inventoryCard("Occupied", "60%"),
+                ],
+              ),
+
+              SizedBox(height: 40.h), // 👈 IMPORTANT bottom spacing
             ],
           ),
         ),
       ),
     );
   }
-}
 
-// 🔹 SHIPMENT ITEM
-class ShipmentItem extends StatelessWidget {
-  final String id;
-  final String temp;
-  final String status;
+  // 🔹 STAT CARD
+  Widget _statCard(String title, String value) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(14.w),
+          child: Column(
+            children: [
+              Text(value,
+                  style: TextStyle(
+                      fontSize: 18.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4.h),
+              Text(title, style: TextStyle(fontSize: 12.sp)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  const ShipmentItem({
-    super.key,
-    required this.id,
-    required this.temp,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isGood = temp.contains("2") || temp.contains("3");
-
+  // 🔹 SHIPMENT ITEM (FIXED + ACTIONS)
+  Widget _shipmentItem(String id, String temp, bool isGood) {
     return Card(
-      child: ListTile(
-        title: Text(id),
-        subtitle: Text("Temp: $temp"),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: Padding(
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              status,
-              style: TextStyle(
-                color: isGood
-                    ? Theme.of(context).colorScheme.secondary
-                    : Colors.red,
-              ),
+
+            /// TOP ROW
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(id, style: TextStyle(fontSize: 14.sp)),
+                Text(
+                  isGood ? "OK" : "Warning",
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isGood ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text("Accept"),
+
+            SizedBox(height: 6.h),
+
+            Text("Temp: $temp", style: TextStyle(fontSize: 12.sp)),
+
+            SizedBox(height: 10.h),
+
+            /// ACTION BUTTONS (NO OVERFLOW NOW)
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    child: Text("Accept", style: TextStyle(fontSize: 11.sp)),
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {},
+                    child: Text("Scan QR", style: TextStyle(fontSize: 11.sp)),
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text("Log Temp", style: TextStyle(fontSize: 11.sp)),
+                  ),
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // 🔹 INVENTORY CARD
+  Widget _inventoryCard(String title, String value) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(12.w),
+          child: Column(
+            children: [
+              Text(value,
+                  style: TextStyle(
+                      fontSize: 16.sp, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4.h),
+              Text(title, style: TextStyle(fontSize: 11.sp)),
+            ],
+          ),
         ),
       ),
     );
