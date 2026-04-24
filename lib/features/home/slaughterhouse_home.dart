@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/auth/auth_provider.dart';
 
 class SlaughterhouseHomeScreen extends ConsumerWidget {
@@ -24,11 +25,11 @@ class SlaughterhouseHomeScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
             _buildActions(context),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildBatchList(),
           ],
         ),
@@ -54,6 +55,7 @@ class SlaughterhouseHomeScreen extends ConsumerWidget {
       child: ListView(
         children: const [
           BatchItem(id: "#PK-221", weight: "120kg", status: "Processed"),
+          BatchItem(id: "#PK-221", weight: "120kg", status: "Processed"),
           BatchItem(id: "#PK-222", weight: "95kg", status: "Pending QC"),
         ],
       ),
@@ -73,11 +75,11 @@ class ActionCard extends StatelessWidget {
     return Expanded(
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.w),
           child: Column(
             children: [
-              Icon(icon, size: 28),
-              const SizedBox(height: 6),
+              Icon(icon, size: 28.sp),
+              SizedBox(height: 6.h),
               Text(title, textAlign: TextAlign.center),
             ],
           ),

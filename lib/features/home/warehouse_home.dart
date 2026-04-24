@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/auth/auth_provider.dart';
 
 class WarehouseHomeScreen extends ConsumerWidget {
@@ -20,11 +21,11 @@ class WarehouseHomeScreen extends ConsumerWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
             _buildStats(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             _buildShipmentList(context),
           ],
         ),
@@ -77,12 +78,13 @@ class StatBox extends StatelessWidget {
     return Expanded(
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.w),
           child: Column(
             children: [
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+            value,
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+          ),
               Text(title),
             ],
           ),

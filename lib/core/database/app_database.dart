@@ -5,30 +5,35 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'shipment_table.dart';
+import 'event_log_table.dart';
+import 'temperature_table.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Shipments])
+@DriftDatabase(
+  tables: [Shipments, EventLogs, TemperatureLogs],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
 
-  // 👉 INSERT
-  Future<void> insertShipment(ShipmentsCompanion entry) =>
-      into(shipments).insert(entry);
+  // 🔹 Shipment APIs
+  Future<void> insertShipment(ShipmentsCompanion shipment) =>
+      into(shipments).insert(shipment);
 
-  // 👉 GET ALL
+  Stream<List<Shipment>> watchShipments() =>
+      select(shipments).watch();
+
   Future<List<Shipment>> getAllShipments() =>
       select(shipments).get();
 }
 
-// DB FILE
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'meattrace.db'));
+    final file = File(p.join(dir.path, 'app.db'));
     return NativeDatabase(file);
   });
 }

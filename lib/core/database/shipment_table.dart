@@ -6,6 +6,7 @@ class Shipments extends Table {
   TextColumn get destination => text()();
   RealColumn get temperature => real()();
   TextColumn get status => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};

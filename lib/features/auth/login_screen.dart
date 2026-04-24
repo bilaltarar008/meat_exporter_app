@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/auth/user_model.dart';
 
@@ -9,82 +10,67 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: Colors.grey,
       body: Center(
         child: Container(
-          width: 350,
-          padding: const EdgeInsets.all(24),
+          width: 320.w,
+          padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-              )
-            ],
+            borderRadius: BorderRadius.circular(16.w),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 "MeatTrace",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const SizedBox(height: 20),
-              const Text("Select Role"),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
+              Text("Select Role", style: TextStyle(fontSize: 16.sp)),
+              SizedBox(height: 20.h),
 
-              _buildButton(
-                context,
-                "Login as Owner",
-                    () {
-                  ref.read(authProvider.notifier).state = User(
-                    id: "1",
-                    name: "Amir",
-                    role: UserRole.owner,
-                  );
-                },
-              ),
+              _btn("Login as Owner", () {
+                ref.read(authProvider.notifier).state = User(
+                  id: "1",
+                  name: "Amir",
+                  role: UserRole.owner,
+                );
+              }),
 
-              _buildButton(
-                context,
-                "Login as Slaughterhouse",
-                    () {
-                  ref.read(authProvider.notifier).state = User(
-                    id: "2",
-                    name: "Slaughterhouse",
-                    role: UserRole.slaughterhouse,
-                  );
-                },
-              ),
+              _btn("Login as Slaughterhouse", () {
+                ref.read(authProvider.notifier).state = User(
+                  id: "2",
+                  name: "Slaughterhouse",
+                  role: UserRole.slaughterhouse,
+                );
+              }),
 
-              _buildButton(
-                context,
-                "Login as Warehouse",
-                    () {
-                  ref.read(authProvider.notifier).state = User(
-                    id: "3",
-                    name: "Warehouse",
-                    role: UserRole.warehouse,
-                  );
-                },
-              ),
+              _btn("Login as Warehouse", () {
+                ref.read(authProvider.notifier).state = User(
+                  id: "3",
+                  name: "Warehouse",
+                  role: UserRole.warehouse,
+                );
+              }),
             ],
           ),
         ),
       ),
-      backgroundColor: Colors.grey[100],
     );
   }
 
-  Widget _buildButton(BuildContext context, String text, VoidCallback onPressed) {
+  Widget _btn(String text, VoidCallback onPressed) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           onPressed: onPressed,
-          child: Text(text),
+          child: Text(text, style: TextStyle(fontSize: 14.sp)),
         ),
       ),
     );
