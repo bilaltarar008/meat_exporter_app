@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'features/home/owner_home.dart';
+import 'features/home/slaughterhouse_home.dart';
+import 'features/home/warehouse_home.dart';
+
 import 'core/theme/app_theme.dart';
 import 'features/home/home_router.dart';
 
@@ -26,6 +30,7 @@ void main() async {
   );
 }
 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -35,6 +40,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const HomeRouter(),
+      routes: {
+        '/owner': (_) => OwnerHomeScreen(),
+        '/slaughter': (_) => SlaughterhouseHomeScreen(),
+        '/manager': (_) => WarehouseHomeScreen(),
+      },
     );
   }
 }

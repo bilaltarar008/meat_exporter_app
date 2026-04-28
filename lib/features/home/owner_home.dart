@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import '../../core/auth/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/database/database_provider.dart';
+import '../../core/shipment/shipment_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OwnerHomeScreen extends ConsumerWidget {
   const OwnerHomeScreen({super.key});
@@ -21,7 +24,7 @@ class OwnerHomeScreen extends ConsumerWidget {
       );
     }
 
-    final db = ref.watch(dbProvider);
+    // final db = ref.watch(dbProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -82,12 +85,24 @@ class OwnerHomeScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
+              ),
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue, // Button color
+                  foregroundColor: Colors.white, // Text/Icon color
+                ),
+                onPressed: () async {
+                  await ShipmentService().createShipment("New Shipment");
+                },
+                child: const Text("Create"),
               ),
 
               SizedBox(height: 10.h),
 
-              _buildShipmentList(ref),
+              _buildShipmentList(),
 
               SizedBox(height: 20.h),
 
@@ -104,30 +119,35 @@ class OwnerHomeScreen extends ConsumerWidget {
   }
 
   /// 🔹 SHIPMENTS LIST
-  Widget _buildShipmentList(WidgetRef ref) {
-    final db = ref.watch(dbProvider);
+  Widget _buildShipmentList() {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    return FutureBuilder(
-      future: db.getAllShipments(),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('shipments')
+          .where('ownerId', isEqualTo: uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
       builder: (context, snapshot) {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final shipments = snapshot.data ?? [];
-
-        if (shipments.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(child: Text("No shipments"));
         }
 
+        final docs = snapshot.data!.docs;
+
         return Column(
-          children: shipments.map((s) {
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+
             return Card(
               child: ListTile(
-                title: Text(s.id),
-                subtitle: Text("${s.origin} → ${s.destination}"),
-                trailing: Text("${s.temperature}°C"),
+                title: Text(data['title'] ?? ''),
+                subtitle: Text(data['status'] ?? ''),
               ),
             );
           }).toList(),

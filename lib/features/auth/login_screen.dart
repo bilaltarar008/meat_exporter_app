@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/auth/user_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -29,34 +31,61 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email and password required")),
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-    } on FirebaseAuthException catch (e) {
-      String message = e.code; //
 
-      if (e.code == 'user-not-found') {
-        message = "User not found";
-      } else if (e.code == 'wrong-password') {
-        message = "Wrong password";
-      } else if (e.code == 'invalid-email') {
-        message = "Invalid email format";
+      final email = cred.user!.email!;
+
+      final userData = await UserService().getUserByEmail(email);
+
+      if (userData == null) {
+        throw Exception("User not found in DB");
       }
 
+      final role = userData['role'];
+
+      if (!mounted) return;
+
+      if (role == 'owner') {
+        Navigator.pushReplacementNamed(context, '/owner');
+      } else if (role == 'slaughter') {
+        Navigator.pushReplacementNamed(context, '/slaughter');
+      } else if (role == 'manager') {
+        Navigator.pushReplacementNamed(context, '/manager');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid role")),
+        );
+      }
+
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(e.message ?? "Login failed")),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
 
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 
   @override
