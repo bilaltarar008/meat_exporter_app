@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/foundation.dart';
-import '../../core/auth/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../core/database/database_provider.dart';
-import '../../core/shipment/shipment_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+import '../../core/shipment/shipment_service.dart';
 
 class OwnerHomeScreen extends ConsumerWidget {
   const OwnerHomeScreen({super.key});
@@ -15,7 +13,7 @@ class OwnerHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    /// ✅ FIX 1: WEB BLOCK (VERY IMPORTANT)
+    /// WEB BLOCK
     if (kIsWeb) {
       return const Scaffold(
         body: Center(
@@ -24,8 +22,6 @@ class OwnerHomeScreen extends ConsumerWidget {
       );
     }
 
-    // final db = ref.watch(dbProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -33,13 +29,16 @@ class OwnerHomeScreen extends ConsumerWidget {
           style: TextStyle(fontSize: 18.sp, color: Colors.black),
         ),
         actions: [
+          /// ➕ CREATE SHIPMENT
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showCreateDialog(context),
+          ),
+
+          /// 🚪 LOGOUT
           IconButton(
             icon: const Icon(Icons.logout),
-            color: Colors.red, // Sets the icon color to red
-            iconSize: 30.0,
-            onPressed: () {
-              FirebaseAuth.instance.signOut();
-            },
+            onPressed: () => FirebaseAuth.instance.signOut(),
           ),
         ],
       ),
@@ -62,7 +61,7 @@ class OwnerHomeScreen extends ConsumerWidget {
 
               SizedBox(height: 20.h),
 
-              /// KPI GRID
+              /// KPI (still static for now)
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -79,29 +78,18 @@ class OwnerHomeScreen extends ConsumerWidget {
 
               SizedBox(height: 20.h),
 
-              /// SHIPMENTS
+              /// SHIPMENTS TITLE
               Text(
                 "Shipments",
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
                 ),
-              ),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, // Button color
-                  foregroundColor: Colors.white, // Text/Icon color
-                ),
-                onPressed: () async {
-                  await ShipmentService().createShipment("New Shipment");
-                },
-                child: const Text("Create"),
               ),
 
               SizedBox(height: 10.h),
 
+              /// SHIPMENTS LIST
               _buildShipmentList(),
 
               SizedBox(height: 20.h),
@@ -118,7 +106,44 @@ class OwnerHomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 🔹 SHIPMENTS LIST
+  /// 🔹 CREATE SHIPMENT DIALOG
+  void _showCreateDialog(BuildContext context) {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Create Shipment"),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: "Enter shipment title",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (controller.text.trim().isEmpty) return;
+
+                await ShipmentService()
+                    .createShipment(controller.text.trim());
+
+                Navigator.pop(context);
+              },
+              child: const Text("Create"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 🔹 SHIPMENTS LIST (FIRESTORE)
   Widget _buildShipmentList() {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -135,7 +160,13 @@ class OwnerHomeScreen extends ConsumerWidget {
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("No shipments"));
+          return Column(
+            children: const [
+              Icon(Icons.inventory_2, size: 40, color: Colors.grey),
+              SizedBox(height: 10),
+              Text("No shipments yet"),
+            ],
+          );
         }
 
         final docs = snapshot.data!.docs;
@@ -144,10 +175,41 @@ class OwnerHomeScreen extends ConsumerWidget {
           children: docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
 
+            final status = data['status'] ?? 'unknown';
+            final slaughterDone = data['slaughterDone'] ?? false;
+            final warehouseDone = data['warehouseDone'] ?? false;
+
             return Card(
+              margin: EdgeInsets.symmetric(vertical: 6.h),
               child: ListTile(
-                title: Text(data['title'] ?? ''),
-                subtitle: Text(data['status'] ?? ''),
+                title: Text(
+                  data['title'] ?? '',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "Status: ${status.toUpperCase()}",
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      slaughterDone
+                          ? Icons.check_circle
+                          : Icons.pending,
+                      color:
+                      slaughterDone ? Colors.green : Colors.orange,
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      warehouseDone
+                          ? Icons.check_circle
+                          : Icons.pending,
+                      color:
+                      warehouseDone ? Colors.green : Colors.orange,
+                    ),
+                  ],
+                ),
               ),
             );
           }).toList(),
@@ -156,7 +218,7 @@ class OwnerHomeScreen extends ConsumerWidget {
     );
   }
 
-  /// ALERTS
+  /// ALERTS (STATIC FOR NOW)
   Widget _buildAlerts() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +248,7 @@ class OwnerHomeScreen extends ConsumerWidget {
     );
   }
 
-  /// ACTIVITY
+  /// ACTIVITY (STATIC)
   Widget _buildActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +269,7 @@ class OwnerHomeScreen extends ConsumerWidget {
   }
 }
 
-/// ✅ FIXED KPI BOX (PROFESSIONAL)
+/// KPI BOX
 class KPIBox extends StatelessWidget {
   final String title;
   final String value;
