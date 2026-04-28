@@ -1,134 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/auth/auth_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/database/database_provider.dart';
-import '../../core/database/app_database.dart';
 
 class OwnerHomeScreen extends ConsumerWidget {
   const OwnerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    /// ✅ FIX 1: WEB BLOCK (VERY IMPORTANT)
+    if (kIsWeb) {
+      return const Scaffold(
+        body: Center(
+          child: Text("Database not supported on Web"),
+        ),
+      );
+    }
+
     final db = ref.watch(dbProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Dashboard", style: TextStyle(fontSize: 18.sp)),
+        title: Text(
+          "Owner Dashboard",
+          style: TextStyle(fontSize: 18.sp, color: Colors.black),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            color: Colors.red, // Sets the icon color to red
+            iconSize: 30.0,
             onPressed: () {
-              ref.read(authProvider.notifier).state = null;
+              FirebaseAuth.instance.signOut();
             },
           ),
         ],
       ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
 
-                /// 🔹 HEADER
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Welcome, Onwer",
-                        style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
-                    const Icon(Icons.notifications),
-                  ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              /// HEADER
+              Text(
+                "Welcome, Owner",
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-                /// 🔹 KPI GRID
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  children: const [
-                    KPIBox(title: "Active", value: "12"),
-                    KPIBox(title: "In Transit", value: "5"),
-                    KPIBox(title: "Delivered", value: "20"),
-                    KPIBox(title: "Alerts", value: "2"),
-                  ],
+              /// KPI GRID
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 12.w,
+                mainAxisSpacing: 12.h,
+                children: const [
+                  KPIBox(title: "Active", value: "12"),
+                  KPIBox(title: "In Transit", value: "5"),
+                  KPIBox(title: "Delivered", value: "20"),
+                  KPIBox(title: "Alerts", value: "2"),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              /// SHIPMENTS
+              Text(
+                "Shipments",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                SizedBox(height: 20.h),
+              SizedBox(height: 10.h),
 
-                /// 🔹 ACTION BUTTON
+              _buildShipmentList(ref),
 
-                SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-                /// 🔹 SHIPMENTS LIST (NO EXPANDED)
-                _buildShipmentList(ref),
+              _buildAlerts(),
 
-                SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-                /// 🔹 ALERTS
-                Text("Alerts",
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10.h),
-
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.warning, color: Colors.red),
-                    title: const Text("Temperature spike detected"),
-                    subtitle: const Text("Shipment #UAE-221"),
-                  ),
-                ),
-
-                SizedBox(height: 20.h),
-
-                /// 🔹 ACTIVITY
-                Text("Recent Activity",
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10.h),
-
-                const ActivityItem(text: "AWB uploaded"),
-                const ActivityItem(text: "Shipment departed"),
-
-                SizedBox(height: 40.h),
-              ],
-            ),
+              _buildActivity(),
+            ],
           ),
         ),
+      ),
     );
   }
 
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          "Welcome, Owner",
-          style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-        ),
-        const Icon(Icons.notifications),
-      ],
-    );
-  }
-
-  Widget _buildKPIGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 12.w,
-      mainAxisSpacing: 12.h,
-      children: const [
-        KPIBox(title: "Active", value: "12"),
-        KPIBox(title: "In Transit", value: "5"),
-        KPIBox(title: "Delivered", value: "20"),
-        KPIBox(title: "Alerts", value: "2"),
-      ],
-    );
-  }
-
+  /// 🔹 SHIPMENTS LIST
   Widget _buildShipmentList(WidgetRef ref) {
     final db = ref.watch(dbProvider);
 
@@ -136,32 +111,16 @@ class OwnerHomeScreen extends ConsumerWidget {
       future: db.getAllShipments(),
       builder: (context, snapshot) {
 
-        /// 🔄 LOADING
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        /// ❌ ERROR
-        if (snapshot.hasError) {
-          return const Text("Error loading shipments");
-        }
-
         final shipments = snapshot.data ?? [];
 
-        /// 📭 EMPTY STATE (THIS IS WHAT YOU WANT)
         if (shipments.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.only(top: 40.h),
-            child: Center(
-              child: Text(
-                "No shipments yet",
-                style: TextStyle(fontSize: 14.sp),
-              ),
-            ),
-          );
+          return const Center(child: Text("No shipments"));
         }
 
-        /// ✅ DATA
         return Column(
           children: shipments.map((s) {
             return Card(
@@ -177,37 +136,58 @@ class OwnerHomeScreen extends ConsumerWidget {
     );
   }
 
+  /// ALERTS
   Widget _buildAlerts() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Alerts", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        Text(
+          "Alerts",
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         SizedBox(height: 10.h),
         Card(
           child: ListTile(
             leading: const Icon(Icons.warning, color: Colors.red),
-            title: Text("Temperature spike detected", style: TextStyle(fontSize: 12.sp)),
-            subtitle: Text("Shipment #UAE-221", style: TextStyle(fontSize: 11.sp)),
+            title: Text(
+              "Temperature spike detected",
+              style: TextStyle(fontSize: 12.sp),
+            ),
+            subtitle: Text(
+              "Shipment #UAE-221",
+              style: TextStyle(fontSize: 11.sp),
+            ),
           ),
         ),
       ],
     );
   }
 
+  /// ACTIVITY
   Widget _buildActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Recent Activity", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        Text(
+          "Recent Activity",
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         SizedBox(height: 10.h),
-        ActivityItem(text: "AWB uploaded"),
-        ActivityItem(text: "Shipment departed"),
-        ActivityItem(text: "Batch processed"),
+        const ActivityItem(text: "AWB uploaded"),
+        const ActivityItem(text: "Shipment departed"),
+        const ActivityItem(text: "Batch processed"),
       ],
     );
   }
 }
 
+/// ✅ FIXED KPI BOX (PROFESSIONAL)
 class KPIBox extends StatelessWidget {
   final String title;
   final String value;
@@ -217,13 +197,27 @@ class KPIBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(value, style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4.h),
-            Text(title, style: TextStyle(fontSize: 12.sp)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: Colors.grey[400],
+              ),
+            ),
           ],
         ),
       ),
@@ -231,6 +225,7 @@ class KPIBox extends StatelessWidget {
   }
 }
 
+/// ACTIVITY ITEM
 class ActivityItem extends StatelessWidget {
   final String text;
 

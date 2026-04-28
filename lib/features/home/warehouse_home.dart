@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/auth/auth_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class WarehouseHomeScreen extends ConsumerWidget {
   const WarehouseHomeScreen({super.key});
@@ -10,12 +11,15 @@ class WarehouseHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Warehouse", style: TextStyle(fontSize: 18.sp)),
+        title: Text("Warehouse", style: TextStyle(fontSize: 18.sp,  color: Colors.black)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            color: Colors.red,
+            iconSize: 28.0,
+            tooltip: 'Log out of your account',
             onPressed: () {
-              ref.read(authProvider.notifier).state = null;
+              FirebaseAuth.instance.signOut();
             },
           ),
         ],
@@ -28,54 +32,45 @@ class WarehouseHomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// 🔹 OVERVIEW
               Text("Overview",
                   style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+
               SizedBox(height: 12.h),
 
               Row(
                 children: [
-                  _statCard("Incoming", "4"),
-                  SizedBox(width: 10.w),
-                  _statCard("Stored", "18"),
-                  SizedBox(width: 10.w),
-                  _statCard("Dispatch", "10"),
+                  _stat("Incoming", "4"),
+                  SizedBox(width: 8.w),
+                  _stat("Stored", "18"),
+                  SizedBox(width: 8.w),
+                  _stat("Dispatch", "10"),
                 ],
               ),
 
               SizedBox(height: 20.h),
 
-              /// 🔹 INCOMING SHIPMENTS
-              Text("Incoming Shipments",
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
-              SizedBox(height: 12.h),
+              Text("Shipments"),
+              SizedBox(height: 10.h),
 
-              Column(
-                children: [
-                  _shipmentItem("#UAE-992", "2.1°C", true),
-                  _shipmentItem("#UAE-993", "5.8°C", false),
-                  _shipmentItem("#UAE-995", "6.0°C", false),
-                ],
-              ),
+              _shipment("#UAE-992", "2.1°C", true),
+              _shipment("#UAE-993", "5.8°C", false),
 
               SizedBox(height: 20.h),
 
-              /// 🔹 INVENTORY
-              Text("Inventory Summary",
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
-              SizedBox(height: 12.h),
+              Text("Inventory"),
+              SizedBox(height: 10.h),
 
               Row(
                 children: [
-                  _inventoryCard("Total", "1200kg"),
-                  SizedBox(width: 10.w),
-                  _inventoryCard("Capacity", "2000kg"),
-                  SizedBox(width: 10.w),
-                  _inventoryCard("Occupied", "60%"),
+                  _stat("Total", "1200kg"),
+                  SizedBox(width: 8.w),
+                  _stat("Capacity", "2000kg"),
+                  SizedBox(width: 8.w),
+                  _stat("Occupied", "60%"),
                 ],
               ),
 
-              SizedBox(height: 40.h), // 👈 IMPORTANT bottom spacing
+              SizedBox(height: 40.h),
             ],
           ),
         ),
@@ -83,102 +78,65 @@ class WarehouseHomeScreen extends ConsumerWidget {
     );
   }
 
-  // 🔹 STAT CARD
-  Widget _statCard(String title, String value) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: EdgeInsets.all(14.w),
-          child: Column(
-            children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 18.sp, fontWeight: FontWeight.bold)),
-              SizedBox(height: 4.h),
-              Text(title, style: TextStyle(fontSize: 12.sp)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 🔹 SHIPMENT ITEM (FIXED + ACTIONS)
-  Widget _shipmentItem(String id, String temp, bool isGood) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(12.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            /// TOP ROW
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(id, style: TextStyle(fontSize: 14.sp)),
-                Text(
-                  isGood ? "OK" : "Warning",
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: isGood ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 6.h),
-
-            Text("Temp: $temp", style: TextStyle(fontSize: 12.sp)),
-
-            SizedBox(height: 10.h),
-
-            /// ACTION BUTTONS (NO OVERFLOW NOW)
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    child: Text("Accept", style: TextStyle(fontSize: 11.sp)),
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    child: Text("Scan QR", style: TextStyle(fontSize: 11.sp)),
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text("Log Temp", style: TextStyle(fontSize: 11.sp)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 🔹 INVENTORY CARD
-  Widget _inventoryCard(String title, String value) {
+  Widget _stat(String title, String value) {
     return Expanded(
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(12.w),
           child: Column(
             children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 16.sp, fontWeight: FontWeight.bold)),
-              SizedBox(height: 4.h),
-              Text(title, style: TextStyle(fontSize: 11.sp)),
+              Text(value, style: TextStyle(fontSize: 16.sp)),
+              Text(title),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _shipment(String id, String temp, bool ok) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(id),
+            Text("Temp: $temp"),
+
+            SizedBox(height: 10.h),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      print("Accepted"); // Added a valid action
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green, // Sets the button color to red
+                      foregroundColor: Colors.black, // Sets the text color to white
+                    ),
+                    child: Text("Accept"),
+                  ),
+                ),
+                SizedBox(width: 6.w),
+
+                Expanded(child: OutlinedButton(onPressed: () {},  style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey, // Sets the button color to red
+                  foregroundColor: Colors.white, // Sets the text color to white
+                ),
+                    child: Text("Scan"))),
+                SizedBox(width: 6.w),
+
+                Expanded(child: TextButton(onPressed: () {}, style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, // Sets the button color to red
+                  foregroundColor: Colors.black, // Sets the text color to white
+                ),
+                    child: Text("Log"))),
+              ],
+            ),
+          ],
         ),
       ),
     );

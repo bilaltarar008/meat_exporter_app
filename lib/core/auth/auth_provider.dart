@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-final authProvider = StateProvider<User?>((ref) => null);
+final authProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});

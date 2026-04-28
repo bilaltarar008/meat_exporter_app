@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "221193848095",
+    "project_id": "meat-exporter-app",
+    "storage_bucket": "meat-exporter-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:221193848095:android:b82e866554e1682bbfdc2a",
+        "android_client_info": {
+          "package_name": "com.example.meat_exporter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtIfutaefMsOnW9WFxnxH0b8H1n3zSVOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

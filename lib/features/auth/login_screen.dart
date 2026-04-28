@@ -1,23 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../core/auth/auth_provider.dart';
-import '../../core/auth/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isLoading = false;
+
+  InputDecoration _input(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white54),
+      filled: true,
+      fillColor: const Color(0xFF1F2937),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  Future<void> _login() async {
+    setState(() => isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = e.code; //
+
+      if (e.code == 'user-not-found') {
+        message = "User not found";
+      } else if (e.code == 'wrong-password') {
+        message = "Wrong password";
+      } else if (e.code == 'invalid-email') {
+        message = "Invalid email format";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+
+    setState(() => isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: const Color(0xFF0B1220),
       body: Center(
         child: Container(
-          width: 320.w,
+          width: 340.w,
           padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.w),
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -25,52 +77,49 @@ class LoginScreen extends ConsumerWidget {
               Text(
                 "MeatTrace",
                 style: TextStyle(
-                  fontSize: 24.sp,
+                  fontSize: 22.sp,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
+
               SizedBox(height: 20.h),
-              Text("Select Role", style: TextStyle(fontSize: 16.sp)),
+
+              /// EMAIL
+              TextField(
+                controller: emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _input("Email"),
+              ),
+
+              SizedBox(height: 12.h),
+
+              /// PASSWORD
+              TextField(
+                controller: passwordController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _input("Password"),
+                obscureText: true,
+              ),
+
               SizedBox(height: 20.h),
 
-              _btn("Login as Owner", () {
-                ref.read(authProvider.notifier).state = User(
-                  id: "1",
-                  name: "Amir",
-                  role: UserRole.owner,
-                );
-              }),
-
-              _btn("Login as Slaughterhouse", () {
-                ref.read(authProvider.notifier).state = User(
-                  id: "2",
-                  name: "Slaughterhouse",
-                  role: UserRole.slaughterhouse,
-                );
-              }),
-
-              _btn("Login as Warehouse", () {
-                ref.read(authProvider.notifier).state = User(
-                  id: "3",
-                  name: "Warehouse",
-                  role: UserRole.warehouse,
-                );
-              }),
+              /// LOGIN BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _login,
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text("Login", style: TextStyle(
+                    color: Colors.black, // Change this to your desired color
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),),
+                ),
+              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _btn(String text, VoidCallback onPressed) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          child: Text(text, style: TextStyle(fontSize: 14.sp)),
         ),
       ),
     );
