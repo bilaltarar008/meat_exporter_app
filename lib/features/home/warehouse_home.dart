@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../core/database/database_provider.dart';
 
 class WarehouseHomeScreen extends StatelessWidget {
   const WarehouseHomeScreen({super.key});
@@ -9,8 +10,11 @@ class WarehouseHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+
       appBar: AppBar(
-        title: const Text("Warehouse"),
+        backgroundColor: Colors.white,
+        title: const Text("Warehouse", style: TextStyle(color: Colors.black)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
@@ -19,54 +23,47 @@ class WarehouseHomeScreen extends StatelessWidget {
         ],
       ),
 
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: StreamBuilder(
-          stream: FirebaseFirestore.instance
-              .collection('shipments')
-              .where('slaughterDone', isEqualTo: true)
-              .where('warehouseDone', isEqualTo: false)
-              .snapshots(),
-          builder: (context, snapshot) {
+      body: StreamBuilder(
+        stream: db.watchWarehouseShipments(),
+        builder: (context, snapshot) {
 
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            final docs = snapshot.data!.docs;
+          final shipments = snapshot.data!;
 
-            if (docs.isEmpty) {
-              return const Center(child: Text("No shipments for warehouse"));
-            }
-
-            return ListView.builder(
-              itemCount: docs.length,
-              itemBuilder: (_, i) {
-                final d = docs[i];
-
-                return Card(
-                  child: ListTile(
-                    title: Text(d['title']),
-                    subtitle: Text("Ready for warehouse"),
-
-                    trailing: ElevatedButton(
-                      onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('shipments')
-                            .doc(d.id)
-                            .update({
-                          'warehouseDone': true,
-                          'status': 'Completed',
-                        });
-                      },
-                      child: const Text("Receive"),
-                    ),
-                  ),
-                );
-              },
+          if (shipments.isEmpty) {
+            return const Center(
+              child: Text("No warehouse shipments", style: TextStyle(color: Colors.black)),
             );
-          },
-        ),
+          }
+
+          return ListView.builder(
+            padding: EdgeInsets.all(16.w),
+            itemCount: shipments.length,
+            itemBuilder: (_, i) {
+              final s = shipments[i];
+
+              return Card(
+                color: Colors.white,
+                margin: EdgeInsets.only(bottom: 12.h),
+                child: ListTile(
+                  title: Text(s.title, style: const TextStyle(color: Colors.black)),
+                  subtitle: Text(s.status),
+
+                  trailing: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    onPressed: () {
+                      db.completeWarehouse(s.id);
+                    },
+                    child: const Text("Receive", style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

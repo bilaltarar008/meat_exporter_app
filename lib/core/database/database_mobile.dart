@@ -1,5 +1,6 @@
 import 'app_database.dart';
+import 'database_provider.dart';
 
 AppDatabase getDatabase() {
-  return AppDatabase();
+  return db; // ✅ SAME INSTANCE
 }

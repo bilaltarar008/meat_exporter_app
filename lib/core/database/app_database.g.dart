@@ -50,17 +50,17 @@ class $ShipmentsTable extends Shipments
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("warehouse_done" IN (0, 1))'),
       defaultValue: const Constant(false));
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
+  static const VerificationMeta _currentStageMeta =
+      const VerificationMeta('currentStage');
   @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.dateTime,
+  late final GeneratedColumn<String> currentStage = GeneratedColumn<String>(
+      'current_stage', aliasedName, false,
+      type: DriftSqlType.string,
       requiredDuringInsert: false,
-      defaultValue: currentDateAndTime);
+      defaultValue: const Constant('owner'));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, title, status, slaughterDone, warehouseDone, createdAt];
+      [id, title, status, slaughterDone, warehouseDone, currentStage];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -96,9 +96,11 @@ class $ShipmentsTable extends Shipments
           warehouseDone.isAcceptableOrUnknown(
               data['warehouse_done']!, _warehouseDoneMeta));
     }
-    if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    if (data.containsKey('current_stage')) {
+      context.handle(
+          _currentStageMeta,
+          currentStage.isAcceptableOrUnknown(
+              data['current_stage']!, _currentStageMeta));
     }
     return context;
   }
@@ -119,8 +121,8 @@ class $ShipmentsTable extends Shipments
           .read(DriftSqlType.bool, data['${effectivePrefix}slaughter_done'])!,
       warehouseDone: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}warehouse_done'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      currentStage: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}current_stage'])!,
     );
   }
 
@@ -136,14 +138,14 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   final String status;
   final bool slaughterDone;
   final bool warehouseDone;
-  final DateTime createdAt;
+  final String currentStage;
   const Shipment(
       {required this.id,
       required this.title,
       required this.status,
       required this.slaughterDone,
       required this.warehouseDone,
-      required this.createdAt});
+      required this.currentStage});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -152,7 +154,7 @@ class Shipment extends DataClass implements Insertable<Shipment> {
     map['status'] = Variable<String>(status);
     map['slaughter_done'] = Variable<bool>(slaughterDone);
     map['warehouse_done'] = Variable<bool>(warehouseDone);
-    map['created_at'] = Variable<DateTime>(createdAt);
+    map['current_stage'] = Variable<String>(currentStage);
     return map;
   }
 
@@ -163,7 +165,7 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       status: Value(status),
       slaughterDone: Value(slaughterDone),
       warehouseDone: Value(warehouseDone),
-      createdAt: Value(createdAt),
+      currentStage: Value(currentStage),
     );
   }
 
@@ -176,7 +178,7 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       status: serializer.fromJson<String>(json['status']),
       slaughterDone: serializer.fromJson<bool>(json['slaughterDone']),
       warehouseDone: serializer.fromJson<bool>(json['warehouseDone']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      currentStage: serializer.fromJson<String>(json['currentStage']),
     );
   }
   @override
@@ -188,7 +190,7 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       'status': serializer.toJson<String>(status),
       'slaughterDone': serializer.toJson<bool>(slaughterDone),
       'warehouseDone': serializer.toJson<bool>(warehouseDone),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'currentStage': serializer.toJson<String>(currentStage),
     };
   }
 
@@ -198,14 +200,14 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           String? status,
           bool? slaughterDone,
           bool? warehouseDone,
-          DateTime? createdAt}) =>
+          String? currentStage}) =>
       Shipment(
         id: id ?? this.id,
         title: title ?? this.title,
         status: status ?? this.status,
         slaughterDone: slaughterDone ?? this.slaughterDone,
         warehouseDone: warehouseDone ?? this.warehouseDone,
-        createdAt: createdAt ?? this.createdAt,
+        currentStage: currentStage ?? this.currentStage,
       );
   Shipment copyWithCompanion(ShipmentsCompanion data) {
     return Shipment(
@@ -218,7 +220,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       warehouseDone: data.warehouseDone.present
           ? data.warehouseDone.value
           : this.warehouseDone,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      currentStage: data.currentStage.present
+          ? data.currentStage.value
+          : this.currentStage,
     );
   }
 
@@ -230,14 +234,14 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           ..write('status: $status, ')
           ..write('slaughterDone: $slaughterDone, ')
           ..write('warehouseDone: $warehouseDone, ')
-          ..write('createdAt: $createdAt')
+          ..write('currentStage: $currentStage')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, status, slaughterDone, warehouseDone, createdAt);
+  int get hashCode => Object.hash(
+      id, title, status, slaughterDone, warehouseDone, currentStage);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -247,7 +251,7 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           other.status == this.status &&
           other.slaughterDone == this.slaughterDone &&
           other.warehouseDone == this.warehouseDone &&
-          other.createdAt == this.createdAt);
+          other.currentStage == this.currentStage);
 }
 
 class ShipmentsCompanion extends UpdateCompanion<Shipment> {
@@ -256,14 +260,14 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   final Value<String> status;
   final Value<bool> slaughterDone;
   final Value<bool> warehouseDone;
-  final Value<DateTime> createdAt;
+  final Value<String> currentStage;
   const ShipmentsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.status = const Value.absent(),
     this.slaughterDone = const Value.absent(),
     this.warehouseDone = const Value.absent(),
-    this.createdAt = const Value.absent(),
+    this.currentStage = const Value.absent(),
   });
   ShipmentsCompanion.insert({
     this.id = const Value.absent(),
@@ -271,7 +275,7 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.status = const Value.absent(),
     this.slaughterDone = const Value.absent(),
     this.warehouseDone = const Value.absent(),
-    this.createdAt = const Value.absent(),
+    this.currentStage = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Shipment> custom({
     Expression<int>? id,
@@ -279,7 +283,7 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     Expression<String>? status,
     Expression<bool>? slaughterDone,
     Expression<bool>? warehouseDone,
-    Expression<DateTime>? createdAt,
+    Expression<String>? currentStage,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -287,7 +291,7 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       if (status != null) 'status': status,
       if (slaughterDone != null) 'slaughter_done': slaughterDone,
       if (warehouseDone != null) 'warehouse_done': warehouseDone,
-      if (createdAt != null) 'created_at': createdAt,
+      if (currentStage != null) 'current_stage': currentStage,
     });
   }
 
@@ -297,14 +301,14 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       Value<String>? status,
       Value<bool>? slaughterDone,
       Value<bool>? warehouseDone,
-      Value<DateTime>? createdAt}) {
+      Value<String>? currentStage}) {
     return ShipmentsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
       status: status ?? this.status,
       slaughterDone: slaughterDone ?? this.slaughterDone,
       warehouseDone: warehouseDone ?? this.warehouseDone,
-      createdAt: createdAt ?? this.createdAt,
+      currentStage: currentStage ?? this.currentStage,
     );
   }
 
@@ -326,8 +330,8 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     if (warehouseDone.present) {
       map['warehouse_done'] = Variable<bool>(warehouseDone.value);
     }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
+    if (currentStage.present) {
+      map['current_stage'] = Variable<String>(currentStage.value);
     }
     return map;
   }
@@ -340,7 +344,7 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
           ..write('status: $status, ')
           ..write('slaughterDone: $slaughterDone, ')
           ..write('warehouseDone: $warehouseDone, ')
-          ..write('createdAt: $createdAt')
+          ..write('currentStage: $currentStage')
           ..write(')'))
         .toString();
   }
@@ -363,7 +367,7 @@ typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> status,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
-  Value<DateTime> createdAt,
+  Value<String> currentStage,
 });
 typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
   Value<int> id,
@@ -371,7 +375,7 @@ typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> status,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
-  Value<DateTime> createdAt,
+  Value<String> currentStage,
 });
 
 class $$ShipmentsTableFilterComposer
@@ -398,8 +402,8 @@ class $$ShipmentsTableFilterComposer
   ColumnFilters<bool> get warehouseDone => $composableBuilder(
       column: $table.warehouseDone, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get currentStage => $composableBuilder(
+      column: $table.currentStage, builder: (column) => ColumnFilters(column));
 }
 
 class $$ShipmentsTableOrderingComposer
@@ -428,8 +432,9 @@ class $$ShipmentsTableOrderingComposer
       column: $table.warehouseDone,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get currentStage => $composableBuilder(
+      column: $table.currentStage,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ShipmentsTableAnnotationComposer
@@ -456,8 +461,8 @@ class $$ShipmentsTableAnnotationComposer
   GeneratedColumn<bool> get warehouseDone => $composableBuilder(
       column: $table.warehouseDone, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<String> get currentStage => $composableBuilder(
+      column: $table.currentStage, builder: (column) => column);
 }
 
 class $$ShipmentsTableTableManager extends RootTableManager<
@@ -488,7 +493,7 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> status = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> currentStage = const Value.absent(),
           }) =>
               ShipmentsCompanion(
             id: id,
@@ -496,7 +501,7 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             status: status,
             slaughterDone: slaughterDone,
             warehouseDone: warehouseDone,
-            createdAt: createdAt,
+            currentStage: currentStage,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -504,7 +509,7 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> status = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> currentStage = const Value.absent(),
           }) =>
               ShipmentsCompanion.insert(
             id: id,
@@ -512,7 +517,7 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             status: status,
             slaughterDone: slaughterDone,
             warehouseDone: warehouseDone,
-            createdAt: createdAt,
+            currentStage: currentStage,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../core/database/app_database.dart';
+import '../../core/database/database_provider.dart';
 
 class SlaughterhouseHomeScreen extends StatelessWidget {
   const SlaughterhouseHomeScreen({super.key});
@@ -9,7 +11,10 @@ class SlaughterhouseHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text("Slaughter", style: TextStyle(color: Colors.black)),
         actions: [
           IconButton(
@@ -19,53 +24,72 @@ class SlaughterhouseHomeScreen extends StatelessWidget {
         ],
       ),
 
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: StreamBuilder(
-          stream: FirebaseFirestore.instance
-              .collection('shipments')
-              .where('slaughterDone', isEqualTo: false)
-              .snapshots(),
-          builder: (context, snapshot) {
+      body: StreamBuilder<List<Shipment>>(
+        stream: db.watchSlaughterShipments(),
+        builder: (context, snapshot) {
 
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          final shipments = snapshot.data ?? [];
 
-            final docs = snapshot.data!.docs;
+          if (shipments.isEmpty) {
+            return const Center(
+              child: Text(
+                "No slaughter tasks",
+                style: TextStyle(color: Colors.black),
+              ),
+            );
+          }
 
-            if (docs.isEmpty) {
-              return const Center(child: Text("No pending slaughter", style: TextStyle(color: Colors.black),));
-            }
+          return ListView.builder(
+            padding: EdgeInsets.all(16.w),
+            itemCount: shipments.length,
+            itemBuilder: (_, i) {
+              final s = shipments[i];
 
-            return ListView.builder(
-              itemCount: docs.length,
-              itemBuilder: (_, i) {
-                final d = docs[i];
+              return Card(
+                color: Colors.white,
+                elevation: 2,
+                margin: EdgeInsets.only(bottom: 12.h),
+                child: ListTile(
+                  title: Text(
+                    s.title.isEmpty ? "Untitled Shipment" : s.title,
+                    style: const TextStyle(color: Colors.black),
+                  ),
 
-                return Card(
-                  child: ListTile(
-                    title: Text(d['title']),
-                    subtitle: Text("Status: ${d['status']}"),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.status,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Stage: Slaughter",
+                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                      ),
+                    ],
+                  ),
 
-                    trailing: ElevatedButton(
-                      onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('shipments')
-                            .doc(d.id)
-                            .update({
-                          'slaughterDone': true,
-                          'status': 'Slaughter Completed',
-                        });
+                  trailing: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      onPressed: () {
+                        db.completeSlaughter(s.id);
                       },
-                      child: const Text("Mark Done", style: TextStyle(color: Colors.black)),
+                      child: const Text(
+                        "Done",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
-                );
-              },
-            );
-          },
-        ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

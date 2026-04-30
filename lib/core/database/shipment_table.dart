@@ -5,7 +5,7 @@ class Shipments extends Table {
 
   TextColumn get title => text()();
 
-  TextColumn get stage =>
+  TextColumn get status =>
       text().withDefault(const Constant('created'))();
 
   BoolColumn get slaughterDone =>
@@ -14,6 +14,7 @@ class Shipments extends Table {
   BoolColumn get warehouseDone =>
       boolean().withDefault(const Constant(false))();
 
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  TextColumn get currentStage =>
+      text().withDefault(const Constant('owner'))();
+
 }

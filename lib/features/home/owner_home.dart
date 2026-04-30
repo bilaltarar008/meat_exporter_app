@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/database/app_database.dart';
 import '../../core/database/database_provider.dart';
 
 class OwnerHomeScreen extends StatelessWidget {
@@ -10,14 +11,17 @@ class OwnerHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA), // 👈 FIXED BACKGROUND
+      backgroundColor: const Color(0xFFF3F4F6),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
         title: const Text(
-          "Local Control Tower",
-          style: TextStyle(color: Colors.black),
+          "Shipment Control Tower",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -36,10 +40,10 @@ class OwnerHomeScreen extends StatelessWidget {
         child: Column(
           children: [
 
-            /// KPI
+            /// KPI CARDS
             Row(
               children: const [
-                Expanded(child: _Kpi(title: "Local", value: "DB")),
+                Expanded(child: _Kpi(title: "DB", value: "Local")),
                 SizedBox(width: 8),
                 Expanded(child: _Kpi(title: "Mode", value: "Offline")),
                 SizedBox(width: 8),
@@ -47,25 +51,23 @@ class OwnerHomeScreen extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
 
-            /// LOCAL DB
+            /// SHIPMENTS LIST
             Expanded(
-              child: StreamBuilder(
-                stream: db.watchShipments(),
+              child: StreamBuilder<List<Shipment>>(
+                stream: db.watchOwnerShipments(),
                 builder: (context, snapshot) {
-
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final shipments = snapshot.data!;
+                  final shipments = snapshot.data ?? [];
 
                   if (shipments.isEmpty) {
                     return const Center(
                       child: Text(
-                        "No local shipments",
-                        style: TextStyle(color: Colors.black),
+                        "No shipments yet",
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16,
+                        ),
                       ),
                     );
                   }
@@ -77,59 +79,80 @@ class OwnerHomeScreen extends StatelessWidget {
 
                       return Card(
                         color: Colors.white,
-                        elevation: 2,
-                        margin: EdgeInsets.only(bottom: 10.h),
-                        child: ListTile(
-                          title: Text(
-                            s.title,
-                            style: const TextStyle(color: Colors.black),
-                          ),
-                          subtitle: Text(
-                            s.status,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        elevation: 4,
+                        margin: EdgeInsets.only(bottom: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(12.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
 
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () {
-                                  final controller = TextEditingController(text: s.title);
+                              /// TITLE
+                              Text(
+                                s.title,
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
 
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => AlertDialog(
-                                      title: const Text("Edit Shipment"),
-                                      content: TextField(
-                                        controller: controller,
+                              SizedBox(height: 6.h),
+
+                              /// STATUS
+                              Text(
+                                "Status: ${s.status}",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                ),
+                              ),
+
+                              SizedBox(height: 10.h),
+
+                              /// ACTIONS
+                              Row(
+                                children: [
+
+                                  /// SEND
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        padding: EdgeInsets.symmetric(vertical: 10.h),
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: const Text("Cancel"),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            await db.updateShipmentTitle(
-                                                s.id, controller.text.trim());
-                                            Navigator.pop(context);
-                                          },
-                                          child: const Text("Update",  style: TextStyle(color: Colors.black)),
-                                        ),
-                                      ],
+                                      onPressed: () {
+                                        db.moveToSlaughter(s.id);
+                                      },
+                                      child: const Text(
+                                        "Send to Slaughter",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
 
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  db.deleteShipment(s.id);
-                                },
-                              ),
+                                  SizedBox(width: 8.w),
+
+                                  /// DELETE
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        padding: EdgeInsets.symmetric(vertical: 10.h),
+                                      ),
+                                      onPressed: () {
+                                        db.deleteShipment(s.id);
+                                      },
+                                      child: const Text(
+                                        "Delete",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
                             ],
                           ),
                         ),
@@ -145,38 +168,63 @@ class OwnerHomeScreen extends StatelessWidget {
     );
   }
 
+  /// CREATE DIALOG
   void _showCreateDialog(BuildContext context) {
     final controller = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Create Shipment",
-          style: TextStyle(color: Colors.black),
-        ),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.black),
-          decoration: const InputDecoration(
-            hintText: "Enter title",
+      builder: (_) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+          title: const Text(
+            "Create Shipment",
+            style: TextStyle(color: Colors.black),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              await db.createShipment(controller.text.trim());
-              Navigator.pop(context);
-            },
-            child: const Text("Create", style: TextStyle(color: Colors.black)),
+          content: TextField(
+            controller: controller,
+            style: const TextStyle(color: Colors.black),
+            decoration: InputDecoration(
+              hintText: "Enter shipment name",
+              hintStyle: const TextStyle(color: Colors.grey),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+              ),
+              onPressed: () async {
+                final text = controller.text.trim();
+                if (text.isEmpty) return;
+
+                await db.createShipment(text);
+
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Create",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -190,8 +238,11 @@ class _Kpi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 3,
       color: Colors.white,
-      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: EdgeInsets.all(12.w),
         child: Column(

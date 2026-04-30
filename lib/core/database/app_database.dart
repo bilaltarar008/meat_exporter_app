@@ -15,39 +15,88 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
-  // CREATE
-  Future<int> createShipment(String title) {
-    return into(shipments).insert(
-      ShipmentsCompanion.insert(title: title),
+  /// CREATE
+  Future<int> createShipment(String title) async {
+    print("DB INSERT: $title");
+
+    final id = await into(shipments).insert(
+      ShipmentsCompanion.insert(
+        title: title,
+        currentStage: const Value('owner'),
+      ),
     );
+
+    print("CREATED ID: $id");
+    return id;
   }
 
+  /// EDIT
   Future updateShipmentTitle(int id, String newTitle) {
     return (update(shipments)..where((t) => t.id.equals(id)))
         .write(ShipmentsCompanion(title: Value(newTitle)));
   }
 
-  // READ
-  Stream<List<Shipment>> watchShipments() {
-    return select(shipments).watch();
-  }
-
-  // UPDATE
-  Future updateShipmentStatus(int id, String status) {
-    return (update(shipments)..where((t) => t.id.equals(id)))
-        .write(ShipmentsCompanion(status: Value(status)));
-  }
-
-  // DELETE
+  /// DELETE
   Future deleteShipment(int id) {
     return (delete(shipments)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// STREAMS
+  Stream<List<Shipment>> watchOwnerShipments() {
+    return (select(shipments)
+      ..where((s) => s.currentStage.equals('owner')))
+        .watch();
+  }
+
+  Stream<List<Shipment>> watchSlaughterShipments() {
+    return (select(shipments)
+      ..where((s) => s.currentStage.equals('slaughter')))
+        .watch();
+  }
+
+  Stream<List<Shipment>> watchWarehouseShipments() {
+    return (select(shipments)
+      ..where((s) => s.currentStage.equals('warehouse')))
+        .watch();
+  }
+
+  /// FLOW ACTIONS
+  Future moveToSlaughter(int id) {
+    return (update(shipments)..where((t) => t.id.equals(id)))
+        .write(const ShipmentsCompanion(
+      currentStage: Value('slaughter'),
+      status: Value('Sent to Slaughter'),
+    ));
+  }
+
+  Future completeSlaughter(int id) {
+    return (update(shipments)..where((t) => t.id.equals(id)))
+        .write(const ShipmentsCompanion(
+      currentStage: Value('warehouse'),
+      status: Value('Slaughter Completed'),
+      slaughterDone: Value(true),
+    ));
+  }
+
+  Future completeWarehouse(int id) async {
+    await (update(shipments)..where((s) => s.id.equals(id))).write(
+      const ShipmentsCompanion(
+        warehouseDone: Value(true),
+        status: Value('Completed'),
+      ),
+    );
   }
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'db.sqlite'));
+
+    final path = p.join(dir.path, 'db.sqlite');
+    print("🔥 DB PATH: $path");
+
+    final file = File(path);
+
     return NativeDatabase(file);
   });
 }
