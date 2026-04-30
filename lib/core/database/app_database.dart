@@ -5,35 +5,49 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'shipment_table.dart';
-import 'event_log_table.dart';
-import 'temperature_table.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(
-  tables: [Shipments, EventLogs, TemperatureLogs],
-)
+@DriftDatabase(tables: [Shipments])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
 
-  // 🔹 Shipment APIs
-  Future<void> insertShipment(ShipmentsCompanion shipment) =>
-      into(shipments).insert(shipment);
+  // CREATE
+  Future<int> createShipment(String title) {
+    return into(shipments).insert(
+      ShipmentsCompanion.insert(title: title),
+    );
+  }
 
-  Stream<List<Shipment>> watchShipments() =>
-      select(shipments).watch();
+  Future updateShipmentTitle(int id, String newTitle) {
+    return (update(shipments)..where((t) => t.id.equals(id)))
+        .write(ShipmentsCompanion(title: Value(newTitle)));
+  }
 
-  Future<List<Shipment>> getAllShipments() =>
-      select(shipments).get();
+  // READ
+  Stream<List<Shipment>> watchShipments() {
+    return select(shipments).watch();
+  }
+
+  // UPDATE
+  Future updateShipmentStatus(int id, String status) {
+    return (update(shipments)..where((t) => t.id.equals(id)))
+        .write(ShipmentsCompanion(status: Value(status)));
+  }
+
+  // DELETE
+  Future deleteShipment(int id) {
+    return (delete(shipments)..where((t) => t.id.equals(id))).go();
+  }
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'app.db'));
+    final file = File(p.join(dir.path, 'db.sqlite'));
     return NativeDatabase(file);
   });
 }

@@ -1,7 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'database_mobile.dart'
-if (dart.library.html) 'database_web.dart';
+import 'app_database.dart';
 
-final dbProvider = Provider((ref) {
-  return getDatabase();
-});
+final db = AppDatabase();

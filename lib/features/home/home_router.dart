@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../core/auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import 'owner_home.dart';
@@ -19,20 +21,51 @@ class HomeRouter extends ConsumerWidget {
           return const LoginScreen();
         }
 
-        /// 🔥 ROLE MAPPING (TEMP LOGIC)
-        final email = user.email ?? "";
+        final uid = user.uid;
 
-        if (email == "owner@test.com") {
-          return const OwnerHomeScreen();
-        } else if (email == "slaughter@test.com") {
-          return const SlaughterhouseHomeScreen();
-        } else {
-          return const WarehouseHomeScreen();
-        }
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .get(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+            if (data == null) {
+              return const Scaffold(
+                body: Center(child: Text("User data missing")),
+              );
+            }
+
+            final role = data['role'];
+
+            print("ROLE FROM FIRESTORE: $role");
+
+            if (role == 'owner') {
+              return const OwnerHomeScreen();
+            } else if (role == 'slaughter') {
+              return const SlaughterhouseHomeScreen();
+            } else if (role == 'manager') {
+              return const WarehouseHomeScreen();
+            } else {
+              return const Scaffold(
+                body: Center(child: Text("Invalid role")),
+              );
+            }
+          },
+        );
       },
+
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
+
       error: (_, __) => const Scaffold(
         body: Center(child: Text("Error")),
       ),

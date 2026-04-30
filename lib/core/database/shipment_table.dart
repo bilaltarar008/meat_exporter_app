@@ -1,13 +1,19 @@
 import 'package:drift/drift.dart';
 
 class Shipments extends Table {
-  TextColumn get id => text()();
-  TextColumn get origin => text()();
-  TextColumn get destination => text()();
-  RealColumn get temperature => real()();
-  TextColumn get status => text()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get id => integer().autoIncrement()();
 
-  @override
-  Set<Column> get primaryKey => {id};
+  TextColumn get title => text()();
+
+  TextColumn get stage =>
+      text().withDefault(const Constant('created'))();
+
+  BoolColumn get slaughterDone =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get warehouseDone =>
+      boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }

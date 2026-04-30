@@ -3,14 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserService {
   final _db = FirebaseFirestore.instance;
 
-  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
-    final result = await _db
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .get();
+  /// ✅ NEW: Get user by UID (CORRECT WAY)
+  Future<Map<String, dynamic>?> getUserByUid(String uid) async {
+    final doc = await _db.collection('users').doc(uid).get();
 
-    if (result.docs.isEmpty) return null;
+    if (!doc.exists) return null;
 
-    return result.docs.first.data();
+    return doc.data();
   }
 }

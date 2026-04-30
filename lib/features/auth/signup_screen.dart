@@ -3,19 +3,19 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'signup_screen.dart';
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
+  final nameController = TextEditingController(); // ✅ FIX ADDED
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  String selectedRole = 'owner';
   bool isLoading = false;
 
   InputDecoration _input(String hint) {
@@ -31,11 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _login() async {
-    if (emailController.text.trim().isEmpty ||
+  Future<void> _signup() async {
+    // ✅ VALIDATION
+    if (nameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email and password required")),
+        const SnackBar(content: Text("All fields are required")),
       );
       return;
     }
@@ -43,48 +45,36 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
       final uid = cred.user!.uid;
 
-      final doc = await FirebaseFirestore.instance
+      /// ✅ SAVE USER USING UID (CORRECT)
+      await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .get();
-
-      final userData = doc.data();
-
-      if (userData == null) {
-        throw Exception("User not found in Firestore");
-      }
-
-      final role = userData['role'];
-
-      print("UID: $uid");
-      print("ROLE FROM FIRESTORE: $role");
+          .set({
+        'email': emailController.text.trim(),
+        'name': nameController.text.trim(),
+        'role': selectedRole,
+      });
 
       if (!mounted) return;
 
-      if (role == 'owner') {
-        Navigator.pushReplacementNamed(context, '/owner');
-      } else if (role == 'slaughter') {
-        Navigator.pushReplacementNamed(context, '/slaughter');
-      } else if (role == 'manager') {
-        Navigator.pushReplacementNamed(context, '/manager');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid role")),
-        );
-      }
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created. Please login.")),
+      );
 
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Login failed")),
+        SnackBar(content: Text(e.message ?? "Signup failed")),
       );
     } catch (e) {
       if (!mounted) return;
@@ -97,6 +87,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) {
       setState(() => isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,9 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
 
-              /// TITLE
               Text(
-                "MeatTrace",
+                "Sign Up",
                 style: TextStyle(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.bold,
@@ -126,6 +123,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               SizedBox(height: 20.h),
+
+              /// NAME
+              TextField(
+                controller: nameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _input("Name"),
+              ),
+
+              SizedBox(height: 12.h),
 
               /// EMAIL
               TextField(
@@ -144,21 +150,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
 
+              SizedBox(height: 12.h),
+
+              /// ROLE DROPDOWN
+              DropdownButtonFormField<String>(
+                value: selectedRole,
+                dropdownColor: const Color(0xFF1F2937),
+                items: const [
+                  DropdownMenuItem(value: 'owner', child: Text("Owner")),
+                  DropdownMenuItem(value: 'slaughter', child: Text("Slaughter")),
+                  DropdownMenuItem(value: 'manager', child: Text("Manager")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedRole = value!;
+                  });
+                },
+                decoration: _input("Select Role"),
+              ),
+
               SizedBox(height: 20.h),
 
-              /// LOGIN BUTTON
+              /// SIGNUP BUTTON
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : _login,
+                  onPressed: isLoading ? null : _signup,
                   child: isLoading
                       ? const CircularProgressIndicator()
                       : const Text(
-                    "Login",
+                    "Create Account",
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -166,16 +190,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
               SizedBox(height: 10.h),
 
+              /// BACK TO LOGIN
               TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SignupScreen(),
-                    ),
-                  );
-                },
-                child: const Text("Create Account"),
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Already have an account? Login"),
               ),
             ],
           ),
