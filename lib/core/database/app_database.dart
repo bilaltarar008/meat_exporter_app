@@ -43,9 +43,10 @@ class AppDatabase extends _$AppDatabase {
 
   /// STREAMS
   Stream<List<Shipment>> watchOwnerShipments() {
-    return (select(shipments)
-      ..where((s) => s.currentStage.equals('owner')))
-        .watch();
+    return select(shipments).watch();
+    // return (select(shipments)
+    //   ..where((s) => s.currentStage.equals('owner')))
+    //     .watch();
   }
 
   Stream<List<Shipment>> watchSlaughterShipments() {
@@ -83,6 +84,7 @@ class AppDatabase extends _$AppDatabase {
       const ShipmentsCompanion(
         warehouseDone: Value(true),
         status: Value('Completed'),
+        currentStage: const Value('completed'),
       ),
     );
   }

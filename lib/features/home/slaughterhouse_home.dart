@@ -11,11 +11,14 @@ class SlaughterhouseHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFFFFF7ED),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text("Slaughter", style: TextStyle(color: Colors.black)),
+        title: const Text(
+          "Slaughter Operations",
+          style: TextStyle(color: Colors.black),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
@@ -27,14 +30,13 @@ class SlaughterhouseHomeScreen extends StatelessWidget {
       body: StreamBuilder<List<Shipment>>(
         stream: db.watchSlaughterShipments(),
         builder: (context, snapshot) {
-
           final shipments = snapshot.data ?? [];
 
           if (shipments.isEmpty) {
             return const Center(
               child: Text(
                 "No slaughter tasks",
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: Colors.black54),
               ),
             );
           }
@@ -46,44 +48,55 @@ class SlaughterhouseHomeScreen extends StatelessWidget {
               final s = shipments[i];
 
               return Card(
+                elevation: 4,
                 color: Colors.white,
-                elevation: 2,
-                margin: EdgeInsets.only(bottom: 12.h),
-                child: ListTile(
-                  title: Text(
-                    s.title.isEmpty ? "Untitled Shipment" : s.title,
-                    style: const TextStyle(color: Colors.black),
-                  ),
-
-                  subtitle: Column(
+                margin: EdgeInsets.only(bottom: 14.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(12.w),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
+                      Text(
+                        s.title,
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      SizedBox(height: 6.h),
+
                       Text(
                         s.status,
                         style: const TextStyle(color: Colors.grey),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "Stage: Slaughter",
-                        style: TextStyle(color: Colors.orange, fontSize: 12),
-                      ),
-                    ],
-                  ),
 
-                  trailing: Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                      ),
-                      onPressed: () {
-                        db.completeSlaughter(s.id);
-                      },
-                      child: const Text(
-                        "Done",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
+                      SizedBox(height: 10.h),
+
+                      Row(
+                        children: [
+
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                              ),
+                              onPressed: () {
+                                db.completeSlaughter(s.id);
+                              },
+                              child: const Text(
+                                "Mark Slaughter Done",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
               );

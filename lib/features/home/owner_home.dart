@@ -40,20 +40,20 @@ class OwnerHomeScreen extends StatelessWidget {
         child: Column(
           children: [
 
-            /// KPI CARDS
+            /// KPI
             Row(
-              children: const [
+              children: [
                 Expanded(child: _Kpi(title: "DB", value: "Local")),
-                SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Expanded(child: _Kpi(title: "Mode", value: "Offline")),
-                SizedBox(width: 8),
+                SizedBox(width: 8.w),
                 Expanded(child: _Kpi(title: "Status", value: "Active")),
               ],
             ),
 
             SizedBox(height: 20.h),
 
-            /// SHIPMENTS LIST
+            /// LIST
             Expanded(
               child: StreamBuilder<List<Shipment>>(
                 stream: db.watchOwnerShipments(),
@@ -64,10 +64,7 @@ class OwnerHomeScreen extends StatelessWidget {
                     return const Center(
                       child: Text(
                         "No shipments yet",
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.black54),
                       ),
                     );
                   }
@@ -96,18 +93,20 @@ class OwnerHomeScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
                                 ),
                               ),
 
-                              SizedBox(height: 6.h),
+                              SizedBox(height: 8.h),
+
+                              /// 🔥 TRACKER
+                              _tracker(s.currentStage),
+
+                              SizedBox(height: 10.h),
 
                               /// STATUS
                               Text(
                                 "Status: ${s.status}",
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                ),
+                                style: const TextStyle(color: Colors.grey),
                               ),
 
                               SizedBox(height: 10.h),
@@ -116,18 +115,17 @@ class OwnerHomeScreen extends StatelessWidget {
                               Row(
                                 children: [
 
-                                  /// SEND
+                                  /// SEND TO SLAUGHTER
                                   Expanded(
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,
-                                        padding: EdgeInsets.symmetric(vertical: 10.h),
                                       ),
                                       onPressed: () {
                                         db.moveToSlaughter(s.id);
                                       },
                                       child: const Text(
-                                        "Send to Slaughter",
+                                        "Send",
                                         style: TextStyle(color: Colors.white),
                                       ),
                                     ),
@@ -140,7 +138,6 @@ class OwnerHomeScreen extends StatelessWidget {
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.red,
-                                        padding: EdgeInsets.symmetric(vertical: 10.h),
                                       ),
                                       onPressed: () {
                                         db.deleteShipment(s.id);
@@ -152,7 +149,7 @@ class OwnerHomeScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -168,63 +165,83 @@ class OwnerHomeScreen extends StatelessWidget {
     );
   }
 
-  /// CREATE DIALOG
+  Widget _tracker(String stage) {
+    Color owner = Colors.grey;
+    Color slaughter = Colors.grey;
+    Color warehouse = Colors.grey;
+
+    if (stage == 'owner') owner = Colors.blue;
+    if (stage == 'slaughter') slaughter = Colors.orange;
+    if (stage == 'warehouse') warehouse = Colors.green;
+
+    return Row(
+      children: [
+        _step("Owner", owner),
+        _line(),
+        _step("Slaughter", slaughter),
+        _line(),
+        _step("Warehouse", warehouse),
+      ],
+    );
+  }
+
+  Widget _step(String label, Color color) {
+    return Column(
+      children: [
+        CircleAvatar(radius: 5, backgroundColor: color),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 10, color: color)),
+      ],
+    );
+  }
+
+  Widget _line() {
+    return Expanded(
+      child: Container(height: 1, color: Colors.grey.shade300),
+    );
+  }
+
+  /// CREATE
   void _showCreateDialog(BuildContext context) {
     final controller = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text("Create Shipment", style: TextStyle(color: Colors.black),),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.black),
+          decoration: const InputDecoration(
+            hintText: "Enter shipment name",
+            hintStyle: TextStyle(color: Colors.blueGrey),
           ),
-          title: const Text(
-            "Create Shipment",
-            style: TextStyle(color: Colors.black),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
           ),
-          content: TextField(
-            controller: controller,
-            style: const TextStyle(color: Colors.black),
-            decoration: InputDecoration(
-              hintText: "Enter shipment name",
-              hintStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.black),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-              ),
-              onPressed: () async {
-                final text = controller.text.trim();
-                if (text.isEmpty) return;
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
 
-                await db.createShipment(text);
+              await db.createShipment(text);
 
-                Navigator.pop(context);
-              },
-              child: const Text(
-                "Create",
-                style: TextStyle(color: Colors.white),
-              ),
+              Navigator.pop(context);
+            },
+            child: const Text(
+              "Create",
+              style: TextStyle(color: Colors.white),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -233,7 +250,10 @@ class _Kpi extends StatelessWidget {
   final String title;
   final String value;
 
-  const _Kpi({required this.title, required this.value});
+  const _Kpi({
+    required this.title,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -246,18 +266,23 @@ class _Kpi extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(12.w),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               value,
               style: TextStyle(
-                fontSize: 18.sp,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
+            SizedBox(height: 4.h),
             Text(
               title,
-              style: const TextStyle(color: Colors.grey),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
