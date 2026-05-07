@@ -175,7 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   );
                 },
-                child: const Text("Create Account"),
+                child: const Text("Create Account", style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ), ),
               ),
             ],
           ),

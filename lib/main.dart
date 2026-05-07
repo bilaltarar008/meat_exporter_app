@@ -7,23 +7,11 @@ import 'features/home/owner_home.dart';
 import 'features/home/slaughterhouse_home.dart';
 import 'features/home/warehouse_home.dart';
 
-import 'core/theme/app_theme.dart';
 import 'features/home/home_router.dart';
-
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  theme: ThemeData(
-    scaffoldBackgroundColor: const Color(0xFFF3F4F6),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-    ),
-    textTheme: const TextTheme(
-      bodyMedium: TextStyle(color: Colors.black),
-    ),
-  );
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -33,13 +21,15 @@ void main() async {
     ProviderScope(
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
-        builder: (_, child) => const MyApp(),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, child) {
+          return const MyApp();
+        },
       ),
     ),
   );
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -48,12 +38,41 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+
+      /// ✅ LIGHT PROFESSIONAL THEME
+      theme: ThemeData(
+        useMaterial3: true,
+
+        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 1,
+        ),
+
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+          shadowColor: Colors.black12,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(
+            color: Color(0xFF111827),
+          ),
+        ),
+      ),
+
       home: const HomeRouter(),
+
       routes: {
-        '/owner': (_) => OwnerHomeScreen(),
-        '/slaughter': (_) => SlaughterhouseHomeScreen(),
-        '/manager': (_) => WarehouseHomeScreen(),
+        '/owner': (_) => const OwnerHomeScreen(),
+        '/slaughter': (_) => const SlaughterhouseHomeScreen(),
+        '/manager': (_) => const WarehouseHomeScreen(),
       },
     );
   }

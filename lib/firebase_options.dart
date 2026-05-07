@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -59,4 +56,15 @@ class DefaultFirebaseOptions {
     projectId: 'meat-exporter-app',
     storageBucket: 'meat-exporter-app.firebasestorage.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAygo23ECnrbborA3XUUuYUj22qGBfz718',
+    appId: '1:221193848095:web:2d8ed253e5be6ca0bfdc2a',
+    messagingSenderId: '221193848095',
+    projectId: 'meat-exporter-app',
+    authDomain: 'meat-exporter-app.firebaseapp.com',
+    storageBucket: 'meat-exporter-app.firebasestorage.app',
+    measurementId: 'G-Z263MVVH8W',
+  );
+
 }

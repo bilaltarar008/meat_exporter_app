@@ -1,1 +1,36 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"meat-exporter-app","appId":"1:221193848095:android:b82e866554e1682bbfdc2a","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"meat-exporter-app","configurations":{"android":"1:221193848095:android:b82e866554e1682bbfdc2a"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "meat-exporter-app",
+          "appId": "1:221193848095:android:b82e866554e1682bbfdc2a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "meat-exporter-app",
+          "configurations": {
+            "android": "1:221193848095:android:b82e866554e1682bbfdc2a",
+            "web": "1:221193848095:web:2d8ed253e5be6ca0bfdc2a"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

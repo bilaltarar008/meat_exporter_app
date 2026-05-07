@@ -1,0 +1,1 @@
+importScripts('sql-wasm.js');

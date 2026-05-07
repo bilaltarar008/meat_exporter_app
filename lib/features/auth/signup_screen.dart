@@ -155,18 +155,57 @@ class _SignupScreenState extends State<SignupScreen> {
               /// ROLE DROPDOWN
               DropdownButtonFormField<String>(
                 value: selectedRole,
-                dropdownColor: const Color(0xFF1F2937),
+
+                dropdownColor: const Color(0xFF1E293B),
+
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFF1E293B),
+
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+
                 items: const [
-                  DropdownMenuItem(value: 'owner', child: Text("Owner")),
-                  DropdownMenuItem(value: 'slaughter', child: Text("Slaughter")),
-                  DropdownMenuItem(value: 'manager', child: Text("Manager")),
+
+                  DropdownMenuItem(
+                    value: 'owner',
+                    child: Text(
+                      'Owner',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+
+                  DropdownMenuItem(
+                    value: 'slaughter',
+                    child: Text(
+                      'Slaughter',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+
+                  DropdownMenuItem(
+                    value: 'manager',
+                    child: Text(
+                      'Manager',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ],
+
                 onChanged: (value) {
                   setState(() {
                     selectedRole = value!;
                   });
                 },
-                decoration: _input("Select Role"),
               ),
 
               SizedBox(height: 20.h),
@@ -182,7 +221,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     "Create Account",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                 ),
