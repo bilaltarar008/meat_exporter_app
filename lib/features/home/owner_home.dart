@@ -5,6 +5,7 @@ import 'archived_shipments_screen.dart';
 import '../../core/database/app_database.dart';
 import '../../core/database/database_provider.dart';
 import '../shipment/shipment_detail_screen.dart';
+import '../../core/services/firestore_provider.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -822,6 +823,25 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
                 /// CREATE
                 await db.createShipmentFull(
+                  title: title.text.trim(),
+
+                  cost:
+                  double.tryParse(cost.text) ?? 0,
+
+                  sale:
+                  double.tryParse(sale.text) ?? 0,
+
+                  weight:
+                  double.tryParse(weight.text) ?? 0,
+                );
+
+                final shipmentCode =
+                await db.generateShipmentCode();
+
+                await firestoreService.createShipment(
+
+                  shipmentCode: shipmentCode,
+
                   title: title.text.trim(),
 
                   cost:
