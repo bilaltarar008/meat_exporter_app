@@ -19,7 +19,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration =>
@@ -48,6 +48,23 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.createTable(
               shipmentActivities,
+            );
+          }
+          if (from < 5) {
+
+            await m.addColumn(
+              shipments,
+              shipments.firestoreId,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.synced,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.updatedAt,
             );
           }
         },
@@ -118,6 +135,10 @@ class AppDatabase extends _$AppDatabase {
         const Value(
           'Purchase Confirmed',
         ),
+
+        synced: const Value(false),
+
+        updatedAt: Value(DateTime.now()),
       ),
     );
 
@@ -338,15 +359,21 @@ class AppDatabase extends _$AppDatabase {
 
     ).write(
 
-      const ShipmentsCompanion(
+      ShipmentsCompanion(
 
         currentStage:
-        Value('slaughter'),
+        const Value('slaughter'),
 
         status:
-        Value(
+        const Value(
           'Sent to Slaughter',
         ),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
       ),
     );
 
@@ -371,18 +398,24 @@ class AppDatabase extends _$AppDatabase {
 
     ).write(
 
-      const ShipmentsCompanion(
+      ShipmentsCompanion(
 
         currentStage:
-        Value('warehouse'),
+        const Value('warehouse'),
 
         status:
-        Value(
+        const Value(
           'Slaughter Completed',
         ),
 
         slaughterDone:
-        Value(true),
+        const Value(true),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
       ),
     );
 
@@ -407,16 +440,22 @@ class AppDatabase extends _$AppDatabase {
 
     ).write(
 
-      const ShipmentsCompanion(
+      ShipmentsCompanion(
 
         warehouseDone:
-        Value(true),
+        const Value(true),
 
         status:
-        Value('Completed'),
+        const Value('Completed'),
 
         currentStage:
-        Value('completed'),
+        const Value('completed'),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
       ),
     );
 
@@ -454,6 +493,12 @@ class AppDatabase extends _$AppDatabase {
 
         nextAction:
         Value(nextAction),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
       ),
     );
   }
@@ -475,8 +520,37 @@ class AppDatabase extends _$AppDatabase {
 
     ).write(
 
-      const ShipmentsCompanion(
-        archived: Value(true),
+      ShipmentsCompanion(
+
+        archived:
+        const Value(true),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> restoreShipment(int id) async {
+
+    await (
+        update(shipments)
+          ..where((tbl) => tbl.id.equals(id))
+    ).write(
+
+      ShipmentsCompanion(
+
+        archived:
+        const Value(false),
+
+        synced:
+        const Value(false),
+
+        updatedAt:
+        Value(DateTime.now()),
       ),
     );
   }

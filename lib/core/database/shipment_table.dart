@@ -75,6 +75,20 @@ class Shipments extends Table {
         const Constant(false),
       )();
 
+  /// FIRESTORE SYNC
+  TextColumn get firestoreId =>
+      text().nullable()();
+
+  BoolColumn get synced =>
+      boolean().withDefault(
+        const Constant(false),
+      )();
+
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(
+        currentDateAndTime,
+      )();
+
   /// ARCHIVE
   BoolColumn get archived =>
       boolean().withDefault(

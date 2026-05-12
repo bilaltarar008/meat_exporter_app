@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'archived_shipments_screen.dart';
-import '../../core/database/app_database.dart';
 import '../../core/database/database_provider.dart';
+
+import '../../core/database/app_database.dart';
+
+
 import '../shipment/shipment_detail_screen.dart';
+
 import '../../core/services/firestore_provider.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
@@ -22,255 +27,427 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF3F4F6),
 
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 1,
-          title: const Text(
-            "Shipment Control Tower",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-          bottom: const TabBar(
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorWeight: 3,
-            tabs: [
-              Tab(text: "All"),
-              Tab(text: "Slaughter"),
-              Tab(text: "Warehouse"),
-              Tab(text: "Done"),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.black),
-              onPressed: () => _showCreateDialog(context),
-            ),
-            IconButton(
-              icon: const Icon(Icons.archive),
+    return Scaffold(
 
-              onPressed: () {
+      backgroundColor: const Color(0xFFF3F4F6),
 
-                Navigator.push(
-                  context,
+      /// ================= DRAWER =================
 
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const ArchivedShipmentsScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.red),
-              onPressed: () => FirebaseAuth.instance.signOut(),
-            ),
-          ],
-        ),
-
-
-
-
-
-        body: Padding(
-          padding: EdgeInsets.all(16.w),
+      endDrawer: Drawer(
+        child: SafeArea(
           child: Column(
             children: [
 
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+              const SizedBox(height: 20),
 
-                child: TextField(
-                  decoration: InputDecoration(
-                 hintText: 'Search shipments...',
-                 prefixIcon: const Icon(Icons.search),
-                 filled: true,
-                 fillColor: Colors.white,
-
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-          ),
-
-          onChanged: (value) {
-            setState(() {
-              searchQuery = value.toLowerCase();
-            });
-          },
-        ),
-      ),
-
-              SizedBox(
-                height: 42,
-
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-
-                  children: [
-
-                    _filterChip('all', 'All'),
-                    _filterChip('pending', 'Pending'),
-                    _filterChip('completed', 'Completed'),
-                    _filterChip('profit', 'High Profit'),
-
-                  ],
+              const CircleAvatar(
+                radius: 36,
+                backgroundColor: Color(0xFF2563EB),
+                child: Icon(
+                  Icons.inventory_2_rounded,
+                  color: Colors.white,
+                  size: 36,
                 ),
               ),
 
-              SizedBox(height: 16.h),
+              const SizedBox(height: 12),
 
-              /// KPI
-              Row(
-                children: [
-                  Expanded(child: _kpi("Total", db.countAll())),
-                  SizedBox(width: 6.w),
-                  Expanded(child: _kpi("Slaughter", db.countSlaughter())),
-                  SizedBox(width: 6.w),
-                  Expanded(child: _kpi("Warehouse", db.countWarehouse())),
-                  SizedBox(width: 6.w),
-                  Expanded(child: _kpi("Done", db.countCompleted())),
+              const Text(
+                "Shipment Dashboard",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              _drawerTile(
+                icon: Icons.dashboard_rounded,
+                title: 'All Shipments',
+                onTap: () {
+
+                  setState(() {
+                    selectedFilter = 'all';
+                  });
+
+                  Navigator.pop(context);
+                },
+              ),
+
+              _drawerTile(
+                icon: Icons.local_shipping_rounded,
+                title: 'Slaughter',
+                onTap: () {
+                  setState(() {
+                    selectedFilter = 'slaughter';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+
+              _drawerTile(
+                icon: Icons.warehouse_rounded,
+                title: 'Warehouse',
+                onTap: () {
+                  setState(() {
+                    selectedFilter = 'warehouse';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+
+              _drawerTile(
+                icon: Icons.check_circle_outline,
+                title: 'Completed',
+                onTap: () {
+                  setState(() {
+                    selectedFilter = 'completed';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+
+              _drawerTile(
+                icon: Icons.archive_outlined,
+                title: 'Archived Shipments',
+                onTap: () {
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const ArchivedShipmentsScreen(),
+                    ),
+                  );
+                },
+              ),
+
+              const Spacer(),
+
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+
+                    onPressed: () {
+                      FirebaseAuth.instance.signOut();
+                    },
+
+                    icon: const Icon(Icons.logout),
+
+                    label: const Text(
+                      "Logout",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      /// ================= APPBAR =================
+
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+
+        title: const Text(
+          "Shipment Control Tower",
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+
+        actions: [
+
+          /// CREATE
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB),
+                borderRadius: BorderRadius.circular(14),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blueGrey.withOpacity(0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
 
-              SizedBox(height: 16.h),
+              child: IconButton(
 
-              _needsAttention(),
+                padding: const EdgeInsets.all(12),
 
-              /// TAB CONTENT
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildList(db.watchAllShipments()),
-                    _buildList(db.watchSlaughterShipments()),
-                    _buildList(db.watchWarehouseShipments()),
-                    _buildList(db.watchCompletedShipments()),
-                  ],
+                icon: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 15,
                 ),
+
+                onPressed: () => _showCreateDialog(context),
               ),
-            ],
+            ),
           ),
+
+
+
+          /// MENU
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: Color(0xFF111827),
+                  size: 30,
+                ),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+              );
+            },
+          ),
+
+          const SizedBox(width: 6),
+        ],
+      ),
+
+      /// ================= BODY =================
+
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+
+        child: Column(
+          children: [
+
+            /// SEARCH BAR
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search shipments...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            /// FILTERS
+
+            SizedBox(
+              height: 46,
+
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+
+                children: [
+
+                  _filterChip('all', 'All'),
+
+                  _filterChip('pending', 'Pending'),
+
+                  _filterChip('completed', 'Completed'),
+
+                  _filterChip('profit', 'High Profit'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            /// KPI SECTION
+
+            StreamBuilder<List<Map<String, dynamic>>>(
+
+              stream: firestoreService.watchShipments(),
+
+              builder: (context, snapshot) {
+
+                final data = snapshot.data ?? [];
+
+                final total =
+                    data.length;
+
+                final slaughter =
+                    data.where(
+                          (e) =>
+                      e['currentStage'] == 'slaughter',
+                    ).length;
+
+                final warehouse =
+                    data.where(
+                          (e) =>
+                      e['currentStage'] == 'warehouse',
+                    ).length;
+
+                final completed =
+                    data.where(
+                          (e) =>
+                      e['currentStage'] == 'completed',
+                    ).length;
+
+                return Row(
+
+                  children: [
+
+                    Expanded(
+                      child: _kpiStatic(
+                        "Total",
+                        total,
+                      ),
+                    ),
+
+                    const SizedBox(width: 6),
+
+                    Expanded(
+                      child: _kpiStatic(
+                        "Slaughter",
+                        slaughter,
+                      ),
+                    ),
+
+                    const SizedBox(width: 6),
+
+                    Expanded(
+                      child: _kpiStatic(
+                        "Warehouse",
+                        warehouse,
+                      ),
+                    ),
+
+                    const SizedBox(width: 6),
+
+                    Expanded(
+                      child: _kpiStatic(
+                        "Done",
+                        completed,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 10),
+
+            /// SHIPMENT LIST
+
+            Expanded(
+              child: _buildFirestoreList(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// ================= LIST =================
-
-  Widget _buildList(Stream<List<Shipment>> stream) {
-    return StreamBuilder<List<Shipment>>(
-      stream: stream,
-      builder: (context, snapshot) {
-
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final allShipments = snapshot.data!;
-
-        final shipments = allShipments.where((s) {
-
-          final code =
-          (s.shipmentCode ?? '').toLowerCase();
-
-          final title =
-          s.title.toLowerCase();
-
-          final matchesSearch =
-              code.contains(searchQuery) ||
-                  title.contains(searchQuery);
-
-          bool matchesFilter = true;
-
-          if (selectedFilter == 'pending') {
-
-            matchesFilter =
-                s.status.toLowerCase().contains('pending');
-
-          } else if (selectedFilter == 'completed') {
-
-            matchesFilter =
-                s.currentStage == 'completed';
-
-          } else if (selectedFilter == 'profit') {
-
-            final profit =
-                s.salePrice - s.purchaseCost;
-
-            matchesFilter = profit > 1000;
-          }
-
-          return matchesSearch && matchesFilter;
-
-        }).toList();
-
-        if (shipments.isEmpty) {
-          return const Center(child: Text("No shipments"));
-        }
-
-        return ListView.builder(
-          itemCount: shipments.length,
-          itemBuilder: (_, i) => _shipmentCard(shipments[i]),
-        );
-      },
-    );
-  }
-
-  /// ================= CARD =================
+  /// ================= SHIPMENT CARD =================
 
   Widget _shipmentCard(Shipment s) {
+
     return InkWell(
+
+      borderRadius: BorderRadius.circular(18),
+
       onTap: () {
+
         Navigator.push(
           context,
+
           MaterialPageRoute(
-            builder: (_) => ShipmentDetailScreen(shipment: s),
+            builder: (_) =>
+                ShipmentDetailScreen(shipment: s),
           ),
         );
       },
+
       child: Card(
-        margin: EdgeInsets.symmetric(vertical: 10.h),
-        elevation: 4,
+
+        margin: const EdgeInsets.only(bottom: 16),
+
+        elevation: 0,
+
+        color: Colors.white,
+
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
         ),
+
         child: Padding(
-          padding: EdgeInsets.all(14.w),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+
             children: [
 
-              /// 🔹 TITLE + STATUS + MENU
+              /// TOP ROW
+
               Row(
                 children: [
+
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
                       children: [
 
-                        /// SHIPMENT CODE
                         Text(
                           s.shipmentCode ?? "Shipment",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 22,
                             color: Color(0xFF111827),
                           ),
                         ),
 
                         const SizedBox(height: 4),
 
-                        /// SHIPMENT TITLE
                         Text(
                           s.title,
                           style: const TextStyle(
-                            fontSize: 12,
                             color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -280,101 +457,47 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   _statusChip(s.status),
 
                   PopupMenuButton<String>(
+
                     icon: const Icon(
                       Icons.more_vert,
-                      color: Color(0xFF6B7280),
                     ),
 
                     onSelected: (value) async {
 
                       if (value == 'archive') {
 
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (_) {
-                            return AlertDialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-
-                              title: const Text(
-                                "Archive Shipment",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              content: Text(
-                                "This shipment will be removed from active operations but will remain available in archived history.",
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-
-                              actions: [
-
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context, false);
-                                  },
-                                  child: const Text("Cancel"),
-                                ),
-
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-
-                                  onPressed: () {
-                                    Navigator.pop(context, true);
-                                  },
-
-                                  child: const Text(
-                                    "Archive",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                        await firestoreService.archiveShipment(
+                          s.firestoreId!,
                         );
 
-                        if (confirm == true) {
-                          await db.archiveShipment(s.id);
+                        if (context.mounted) {
 
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: Colors.green,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                content: const Text(
-                                  "Shipment archived successfully",
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(
+
+                            const SnackBar(
+                              content: Text(
+                                "Shipment archived",
                               ),
-                            );
-                          }
+                            ),
+                          );
                         }
                       }
                     },
 
                     itemBuilder: (_) => [
+
                       const PopupMenuItem(
                         value: 'archive',
+
                         child: Row(
                           children: [
+
                             Icon(Icons.archive_outlined),
+
                             SizedBox(width: 10),
-                            Text("Archive Shipment"),
+
+                            Text("Archive"),
                           ],
                         ),
                       ),
@@ -383,81 +506,121 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                 ],
               ),
 
-              SizedBox(height: 10.h),
+              const SizedBox(height: 10),
 
-              /// 🔹 NEXT ACTION
+              /// NEXT ACTION
+
               Text(
                 "Next: ${s.nextAction}",
                 style: const TextStyle(
                   color: Colors.orange,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
                 ),
               ),
 
-              SizedBox(height: 10.h),
+              const SizedBox(height: 4),
 
-              /// 🔹 TRACKER
+              /// ALERTS
+
+              _buildShipmentAlerts(s),
+
+              const SizedBox(height: 4),
+
+              /// TRACKER
+
               _tracker(s.currentStage),
 
-              SizedBox(height: 12.h),
+              const SizedBox(height: 12),
 
-              /// 🔹 METRICS
+              /// METRICS
+
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+
                 children: [
-                  _metric("Weight", "${s.weight} kg"),
-                  _metric("Sale", "\$${s.salePrice}"),
-                  _metric("Cost", "\$${s.purchaseCost}"),
+
+                  _metric(
+                    "Weight (KG)",
+                    "${s.weight} kg",
+                  ),
+
+                  _metric(
+                    "Sale Price",
+                    "\$${s.salePrice}",
+                  ),
+
+                  _metric(
+                    "Amount Paidd",
+                    "\$${s.purchaseCost}",
+                  ),
+
                   _profit(s),
                 ],
               ),
 
-              SizedBox(height: 14.h),
+              const SizedBox(height: 12),
 
-              /// 🔹 ACTION BUTTON
+              /// BUTTON
+
               SizedBox(
                 width: double.infinity,
+
                 child: ElevatedButton(
-                  onPressed: s.currentStage == 'completed'
+
+                  onPressed:
+                  s.currentStage == 'completed'
                       ? null
                       : () async {
-                    if (s.currentStage == 'owner') {
-                      await db.updateStatus(
-                        s.id,
-                        "Animals Sent to Slaughter",
-                        "Confirm slaughter completion",
-                      );
-                      await db.moveToSlaughter(s.id);
 
-                    } else if (s.currentStage == 'slaughter') {
-                      await db.updateStatus(
-                        s.id,
-                        "Processing Completed",
-                        "Move to warehouse",
+                    if (s.currentStage == 'owner') {
+
+                      await firestoreService.moveToSlaughter(
+                        s.firestoreId!,
                       );
+
+                    } else if (s.currentStage ==
+                        'slaughter') {
+
+                      await firestoreService.moveToWarehouse(
+                        s.firestoreId!,
+                      );
+
                       await db.completeSlaughter(s.id);
 
-                    } else if (s.currentStage == 'warehouse') {
-                      await db.updateStatus(
-                        s.id,
-                        "Shipment Completed",
-                        "Await payment",
+                    } else if (s.currentStage ==
+                        'warehouse') {
+
+                      await firestoreService.completeShipment(
+                        s.firestoreId!,
                       );
+
                       await db.completeWarehouse(s.id);
                     }
                   },
+
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _buttonColor(s.currentStage),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    backgroundColor:
+                    _buttonColor(s.currentStage),
+
+                    padding:
+                    const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                      BorderRadius.circular(14),
                     ),
                   ),
+
                   child: Text(
                     _buttonText(s.currentStage),
+
                     style: const TextStyle(
-                      color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -472,32 +635,43 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   /// ================= HELPERS =================
 
   String _buttonText(String stage) {
+
     switch (stage) {
+
       case 'owner':
         return "Send for Processing";
+
       case 'slaughter':
         return "Transfer to Warehouse";
+
       case 'warehouse':
         return "Complete Shipment";
+
       default:
         return "Completed";
     }
   }
 
   Color _buttonColor(String stage) {
+
     switch (stage) {
+
       case 'owner':
         return Colors.orange;
+
       case 'slaughter':
         return Colors.blue;
+
       case 'warehouse':
         return Colors.green;
+
       default:
         return Colors.grey;
     }
   }
 
   Widget _tracker(String stage) {
+
     int step = stage == 'owner'
         ? 1
         : stage == 'slaughter'
@@ -508,38 +682,453 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
     return Row(
       children: [
+
         _circle(step >= 1, "Owner"),
+
         _divider(step >= 2),
+
         _circle(step >= 2, "Slaughter"),
+
         _divider(step >= 3),
+
         _circle(step >= 3, "Warehouse"),
       ],
     );
   }
 
   Widget _circle(bool active, String label) {
+
     return Column(
       children: [
+
         CircleAvatar(
           radius: 5,
-          backgroundColor: active ? Colors.blue : Colors.grey.shade300,
+
+          backgroundColor:
+          active
+              ? Colors.blue
+              : Colors.grey.shade300,
         ),
+
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: active ? Colors.blue : Colors.grey)),
+
+        Text(
+          label,
+
+          style: TextStyle(
+            fontSize: 10,
+
+            color:
+            active
+                ? Colors.blue
+                : Colors.grey,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _timelineStep(String title, bool done) {
-    return Row(
+  Widget _buildFirestoreList() {
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+
+      stream: firestoreService.watchShipments(),
+
+      builder: (context, snapshot) {
+
+        if (snapshot.connectionState ==
+            ConnectionState.waiting) {
+
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+
+          return Center(
+            child: Text(snapshot.error.toString()),
+          );
+        }
+
+        if (!snapshot.hasData ||
+            snapshot.data!.isEmpty) {
+
+          return const Center(
+            child: Text("No shipments found"),
+          );
+        }
+
+        final firestoreShipments =
+        snapshot.data!;
+
+        final shipments =
+        firestoreShipments
+
+            .map((data) {
+
+          return Shipment(
+
+            id: 0,
+
+            title: data['title'] ?? '',
+
+            shipmentCode:
+            data['shipmentCode'],
+
+            origin: 'Pakistan',
+
+            destination: 'Dubai',
+
+            nextAction:
+            'Continue Processing',
+
+            paymentStatus: 'pending',
+
+            paymentDue: null,
+
+            purchaseCost:
+            (data['purchaseCost'] ?? 0)
+                .toDouble(),
+
+            salePrice:
+            (data['salePrice'] ?? 0)
+                .toDouble(),
+
+            weight:
+            (data['weight'] ?? 0)
+                .toDouble(),
+
+            status:
+            data['status'] ?? '',
+
+            currentStage:
+            data['currentStage'] ?? 'owner',
+
+            slaughterDone: false,
+
+            warehouseDone: false,
+
+            firestoreId:
+            data['id'],
+
+            synced: true,
+
+            updatedAt: DateTime.now(),
+
+            archived:
+            data['archived'] ?? false,
+          );
+
+        }).where((s) {
+
+          final code =
+          (s.shipmentCode ?? '')
+              .toLowerCase();
+
+          final title =
+          s.title.toLowerCase();
+
+          final matchesSearch =
+              code.contains(searchQuery) ||
+                  title.contains(searchQuery);
+
+          bool matchesFilter = true;
+
+          if (selectedFilter ==
+              'slaughter') {
+
+            matchesFilter =
+                s.currentStage ==
+                    'slaughter';
+
+          } else if (selectedFilter ==
+              'warehouse') {
+
+            matchesFilter =
+                s.currentStage ==
+                    'warehouse';
+
+          } else if (selectedFilter ==
+              'completed') {
+
+            matchesFilter =
+                s.currentStage ==
+                    'completed';
+
+          } else if (selectedFilter ==
+              'pending') {
+
+            matchesFilter =
+                s.currentStage ==
+                    'owner';
+          }
+
+          return matchesSearch &&
+              matchesFilter;
+
+        }).toList();
+
+        if (shipments.isEmpty) {
+
+          return const Center(
+            child: Text(
+              "No shipments found",
+            ),
+          );
+        }
+
+        return ListView.builder(
+
+          itemCount: shipments.length,
+
+          itemBuilder: (_, i) {
+
+            return _shipmentCard(
+              shipments[i],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _divider(bool active) {
+
+    return Expanded(
+      child: Container(
+        height: 2,
+
+        color:
+        active
+            ? Colors.blue
+            : Colors.grey.shade300,
+      ),
+    );
+  }
+
+  Widget _metric(String label, String value) {
+
+    return Column(
       children: [
-        Icon(
-          done ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: done ? Colors.green : Colors.grey,
+
+        Text(
+          label,
+
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF9CA3AF),
+          ),
         ),
-        const SizedBox(width: 10),
-        Text(title),
+
+        const SizedBox(height: 4),
+
+        Text(
+          value,
+
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF111827),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _profit(Shipment s) {
+
+    final profit =
+        s.salePrice - s.purchaseCost;
+
+    return Column(
+      children: [
+
+        const Text(
+          "Profit",
+
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          "\$${profit.toStringAsFixed(0)}",
+
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+
+            color:
+            profit >= 0
+                ? Colors.green
+                : Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _statusChip(String status) {
+
+    Color bg;
+    Color text;
+
+    if (status.toLowerCase().contains("completed")) {
+
+      bg = Colors.green.withOpacity(0.1);
+      text = Colors.green;
+
+    } else if (status.toLowerCase()
+        .contains("slaughter")) {
+
+      bg = Colors.orange.withOpacity(0.1);
+      text = Colors.orange;
+
+    } else if (status.toLowerCase()
+        .contains("pending")) {
+
+      bg = Colors.red.withOpacity(0.1);
+      text = Colors.red;
+
+    } else {
+
+      bg = Colors.blue.withOpacity(0.1);
+      text = Colors.blue;
+    }
+
+    return Container(
+
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(30),
+      ),
+
+      child: Text(
+        status,
+
+        style: TextStyle(
+          fontSize: 11,
+          color: text,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShipmentAlerts(Shipment s) {
+
+    final List<String> alerts = [];
+
+    if (s.paymentStatus.toLowerCase() ==
+        'pending') {
+
+      if (s.paymentDue == null) {
+
+        alerts.add("Payment not scheduled");
+      }
+    }
+
+    if (s.currentStage == 'owner') {
+
+      alerts.add("Awaiting processing");
+    }
+
+    if (alerts.isEmpty) {
+
+      return const SizedBox();
+    }
+
+    return Container(
+
+      width: double.infinity,
+
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+
+        borderRadius:
+        BorderRadius.circular(12),
+
+        border: Border.all(
+          color: Colors.orange.shade200,
+        ),
+      ),
+
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+
+        children: [
+
+          Row(
+            children: const [
+
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 18,
+              ),
+
+              SizedBox(width: 6),
+
+              Text(
+                "Needs Attention",
+
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          ...alerts.map(
+
+                (alert) => Padding(
+
+              padding: const EdgeInsets.only(
+                bottom: 4,
+              ),
+
+              child: Row(
+
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+                children: [
+
+                  const Text("• "),
+
+                  Expanded(
+                    child: Text(
+                      alert,
+
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -552,7 +1141,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         selectedFilter == value;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
+
+      padding: const EdgeInsets.only(
+        right: 10,
+      ),
 
       child: GestureDetector(
 
@@ -565,33 +1157,35 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
         child: Container(
 
-          padding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 10,
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
           ),
 
           decoration: BoxDecoration(
 
-            color: selected
-                ? Colors.blue
+            color:
+            selected
+                ? const Color(0xFF2563EB)
                 : Colors.white,
 
             borderRadius:
             BorderRadius.circular(30),
 
             border: Border.all(
-              color: Colors.blue.shade100,
+              color: const Color(0xFFBFDBFE),
             ),
           ),
 
           child: Text(
-
             label,
 
             style: TextStyle(
               fontWeight: FontWeight.w600,
 
-              color: selected
+              color:
+              selected
                   ? Colors.white
                   : Colors.black87,
             ),
@@ -601,298 +1195,327 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     );
   }
 
-
-  Widget _divider(bool active) {
-    return Expanded(
-      child: Container(
-        height: 2,
-        color: active ? Colors.blue : Colors.grey.shade300,
-      ),
-    );
-  }
-
-  Widget _metric(String label, String value) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF111827),)),
-      ],
-    );
-  }
-
-  Widget _profit(Shipment s) {
-    final profit = s.salePrice - s.purchaseCost;
-
-    return Column(
-      children: [
-        const Text("Profit", style: TextStyle(fontSize: 11, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text(
-          "\$${profit.toStringAsFixed(0)}",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: profit >= 0 ? Colors.green : Colors.red,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statusChip(String status) {
-    Color bg;
-    Color text;
-
-    if (status.toLowerCase().contains("completed")) {
-      bg = Colors.green.withOpacity(0.1);
-      text = Colors.green;
-    } else if (status.toLowerCase().contains("slaughter")) {
-      bg = Colors.orange.withOpacity(0.1);
-      text = Colors.orange;
-    } else if (status.toLowerCase().contains("pending")) {
-      bg = Colors.red.withOpacity(0.1);
-      text = Colors.red;
-    } else {
-      bg = Colors.blue.withOpacity(0.1);
-      text = Colors.blue;
-    }
+  Widget _kpiStatic(
+      String title,
+      int value,
+      ) {
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+
+      height: 72,
+
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
+
+        color: Colors.white,
+
+        borderRadius:
+        BorderRadius.circular(14),
+
+        boxShadow: [
+
+          BoxShadow(
+            color:
+            Colors.black.withOpacity(0.03),
+
+            blurRadius: 6,
+
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 10,
-          color: text,
+
+      child: Column(
+
+        mainAxisAlignment:
+        MainAxisAlignment.center,
+
+        children: [
+
+          Text(
+
+            value.toString(),
+
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Color(0xFF111827),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+
+            title,
+
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerTile({
+
+    required IconData icon,
+
+    required String title,
+
+    required VoidCallback onTap,
+
+  }) {
+
+    return ListTile(
+
+      leading: Icon(
+        icon,
+        color: const Color(0xFF374151),
+      ),
+
+      title: Text(
+        title,
+
+        style: const TextStyle(
           fontWeight: FontWeight.w600,
         ),
       ),
+
+      onTap: onTap,
     );
   }
 
-  Widget _kpi(String title, Stream<int> stream) {
-    return StreamBuilder<int>(
-      stream: stream,
-      builder: (context, snapshot) {
-        final value = snapshot.data ?? 0;
+  /// ================= CREATE DIALOG =================
 
-        return Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 10.h),
-            child: Column(
-              children: [
-                Text(value.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(title, style: const TextStyle(fontSize: 11)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showCreateDialog(
+      BuildContext context,
+      ) {
 
-  Widget _needsAttention() {
-    return StreamBuilder<List<Shipment>>(
-      stream: db.watchAllShipments(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox();
+    final titleController =
+    TextEditingController();
 
-        final shipments = snapshot.data!;
-        final alerts = <String>[];
+    final costController =
+    TextEditingController();
 
-        for (var s in shipments) {
+    final saleController =
+    TextEditingController();
 
-          if (s.paymentStatus.toLowerCase() == 'pending') {
-            if (s.paymentDue == null) {
-              alerts.add(
-                "${s.shipmentCode ?? s.title}: Payment not scheduled",
-              );
-            }
-          }
+    final weightController =
+    TextEditingController();
 
-          if (s.currentStage == 'owner') {
-            alerts.add(
-              "${s.shipmentCode ?? s.title}: Awaiting processing",
-            );
-          }
-        }
-
-        if (alerts.isEmpty) return const SizedBox();
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          margin: const EdgeInsets.only(bottom: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.orange.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                  SizedBox(width: 6),
-                  Text(
-                    "Needs Attention",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              ...alerts.map((e) => Text(
-                "• $e",
-                style: const TextStyle(fontSize: 12),
-              )),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  /// ================= CREATE =================
-
-  void _showCreateDialog(BuildContext context) {
-    final title = TextEditingController();
-    final cost = TextEditingController();
-    final sale = TextEditingController();
-    final weight = TextEditingController();
 
     showDialog(
+
       context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Create Shipment"),
-          content: SingleChildScrollView(
-            child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: title, decoration: const InputDecoration(labelText: "Title")),
-              TextField(controller: cost, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Cost")),
-              TextField(controller: sale, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Sale")),
-              TextField(controller: weight, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Weight")),
-            ],
-          ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+
+      barrierDismissible: false,
+
+      builder: (dialogContext) {
+
+        return StatefulBuilder(
+
+          builder: (context, setState) {
+
+            return AlertDialog(
+
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                BorderRadius.circular(20),
+              ),
+
+              title: const Text(
+                "Create Shipment",
+
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              onPressed: () async {
+              content: SingleChildScrollView(
 
-                /// CLOSE KEYBOARD
-                FocusScope.of(context).unfocus();
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
 
-                /// VALIDATION
-                if (title.text.trim().isEmpty) {
+                  children: [
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Shipment title required"),
-                    ),
-                  );
+                    TextField(
+                      controller: titleController,
 
-                  return;
-                }
+                      decoration: InputDecoration(
+                        labelText: "Title",
 
-                /// CREATE
-                await db.createShipmentFull(
-                  title: title.text.trim(),
-
-                  cost:
-                  double.tryParse(cost.text) ?? 0,
-
-                  sale:
-                  double.tryParse(sale.text) ?? 0,
-
-                  weight:
-                  double.tryParse(weight.text) ?? 0,
-                );
-
-                final shipmentCode =
-                await db.generateShipmentCode();
-
-                await firestoreService.createShipment(
-
-                  shipmentCode: shipmentCode,
-
-                  title: title.text.trim(),
-
-                  cost:
-                  double.tryParse(cost.text) ?? 0,
-
-                  sale:
-                  double.tryParse(sale.text) ?? 0,
-
-                  weight:
-                  double.tryParse(weight.text) ?? 0,
-                );
-
-                /// CLOSE DIALOG
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-
-                /// SUCCESS
-                if (context.mounted) {
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-
-                      content: const Text(
-                        "Shipment created successfully",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                        border: OutlineInputBorder(
+                          borderRadius:
+                          BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                  );
-                }
-              },
 
-              child: const Text(
-                "Create Shipment",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.white,
+                    const SizedBox(height: 4),
+
+                    TextField(
+                      controller: costController,
+
+                      keyboardType:
+                      TextInputType.number,
+
+                      decoration: InputDecoration(
+                        labelText: "Amount Paid",
+
+                        border: OutlineInputBorder(
+                          borderRadius:
+                          BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    TextField(
+                      controller: saleController,
+
+                      keyboardType:
+                      TextInputType.number,
+
+                      decoration: InputDecoration(
+                        labelText: "Sale Price",
+
+                        border: OutlineInputBorder(
+                          borderRadius:
+                          BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    TextField(
+                      controller: weightController,
+
+                      keyboardType:
+                      TextInputType.number,
+
+                      decoration: InputDecoration(
+                        labelText: "Weight (kg)",
+
+                        border: OutlineInputBorder(
+                          borderRadius:
+                          BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            )
-          ],
+
+              actions: [
+
+                /// CANCEL BUTTON
+                TextButton(
+
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                /// CREATE BUTTON
+                ElevatedButton(
+
+                  style: ElevatedButton.styleFrom(
+
+                    backgroundColor: const Color(0xFF2563EB),
+
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 14,
+                    ),
+
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+
+                  onPressed: () async {
+
+                    FocusScope.of(dialogContext).unfocus();
+
+                    final cost =
+                        double.tryParse(costController.text) ?? 0;
+
+                    final sale =
+                        double.tryParse(saleController.text) ?? 0;
+
+                    final weight =
+                        double.tryParse(weightController.text) ?? 0;
+
+                    final shipmentCode =
+                    await db.generateShipmentCode();
+
+                    await db.createShipmentFull(
+
+                      title:
+                      titleController.text.trim(),
+
+                      cost: cost,
+
+                      sale: sale,
+
+                      weight: weight,
+                    );
+
+                    await firestoreService.createShipment(
+
+                      shipmentCode: shipmentCode,
+
+                      title:
+                      titleController.text.trim(),
+
+                      cost: cost,
+
+                      sale: sale,
+
+                      weight: weight,
+                    );
+
+                    if (dialogContext.mounted) {
+
+                      Navigator.pop(dialogContext);
+
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+
+                        const SnackBar(
+                          content: Text(
+                            "Shipment created successfully",
+                          ),
+                        ),
+                      );
+                    }
+                  },
+
+                  child: const Text(
+
+                    "Create Shipment",
+
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

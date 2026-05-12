@@ -124,6 +124,29 @@ class $ShipmentsTable extends Shipments
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("warehouse_done" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _firestoreIdMeta =
+      const VerificationMeta('firestoreId');
+  @override
+  late final GeneratedColumn<String> firestoreId = GeneratedColumn<String>(
+      'firestore_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   static const VerificationMeta _archivedMeta =
       const VerificationMeta('archived');
   @override
@@ -151,6 +174,9 @@ class $ShipmentsTable extends Shipments
         currentStage,
         slaughterDone,
         warehouseDone,
+        firestoreId,
+        synced,
+        updatedAt,
         archived
       ];
   @override
@@ -242,6 +268,20 @@ class $ShipmentsTable extends Shipments
           warehouseDone.isAcceptableOrUnknown(
               data['warehouse_done']!, _warehouseDoneMeta));
     }
+    if (data.containsKey('firestore_id')) {
+      context.handle(
+          _firestoreIdMeta,
+          firestoreId.isAcceptableOrUnknown(
+              data['firestore_id']!, _firestoreIdMeta));
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
     if (data.containsKey('archived')) {
       context.handle(_archivedMeta,
           archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta));
@@ -285,6 +325,12 @@ class $ShipmentsTable extends Shipments
           .read(DriftSqlType.bool, data['${effectivePrefix}slaughter_done'])!,
       warehouseDone: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}warehouse_done'])!,
+      firestoreId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}firestore_id']),
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
       archived: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}archived'])!,
     );
@@ -328,6 +374,11 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   final bool slaughterDone;
   final bool warehouseDone;
 
+  /// FIRESTORE SYNC
+  final String? firestoreId;
+  final bool synced;
+  final DateTime updatedAt;
+
   /// ARCHIVE
   final bool archived;
   const Shipment(
@@ -346,6 +397,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       required this.currentStage,
       required this.slaughterDone,
       required this.warehouseDone,
+      this.firestoreId,
+      required this.synced,
+      required this.updatedAt,
       required this.archived});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -369,6 +423,11 @@ class Shipment extends DataClass implements Insertable<Shipment> {
     map['current_stage'] = Variable<String>(currentStage);
     map['slaughter_done'] = Variable<bool>(slaughterDone);
     map['warehouse_done'] = Variable<bool>(warehouseDone);
+    if (!nullToAbsent || firestoreId != null) {
+      map['firestore_id'] = Variable<String>(firestoreId);
+    }
+    map['synced'] = Variable<bool>(synced);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
     map['archived'] = Variable<bool>(archived);
     return map;
   }
@@ -394,6 +453,11 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       currentStage: Value(currentStage),
       slaughterDone: Value(slaughterDone),
       warehouseDone: Value(warehouseDone),
+      firestoreId: firestoreId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firestoreId),
+      synced: Value(synced),
+      updatedAt: Value(updatedAt),
       archived: Value(archived),
     );
   }
@@ -417,6 +481,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       currentStage: serializer.fromJson<String>(json['currentStage']),
       slaughterDone: serializer.fromJson<bool>(json['slaughterDone']),
       warehouseDone: serializer.fromJson<bool>(json['warehouseDone']),
+      firestoreId: serializer.fromJson<String?>(json['firestoreId']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       archived: serializer.fromJson<bool>(json['archived']),
     );
   }
@@ -439,6 +506,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       'currentStage': serializer.toJson<String>(currentStage),
       'slaughterDone': serializer.toJson<bool>(slaughterDone),
       'warehouseDone': serializer.toJson<bool>(warehouseDone),
+      'firestoreId': serializer.toJson<String?>(firestoreId),
+      'synced': serializer.toJson<bool>(synced),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'archived': serializer.toJson<bool>(archived),
     };
   }
@@ -459,6 +529,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           String? currentStage,
           bool? slaughterDone,
           bool? warehouseDone,
+          Value<String?> firestoreId = const Value.absent(),
+          bool? synced,
+          DateTime? updatedAt,
           bool? archived}) =>
       Shipment(
         id: id ?? this.id,
@@ -477,6 +550,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
         currentStage: currentStage ?? this.currentStage,
         slaughterDone: slaughterDone ?? this.slaughterDone,
         warehouseDone: warehouseDone ?? this.warehouseDone,
+        firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
+        synced: synced ?? this.synced,
+        updatedAt: updatedAt ?? this.updatedAt,
         archived: archived ?? this.archived,
       );
   Shipment copyWithCompanion(ShipmentsCompanion data) {
@@ -511,6 +587,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       warehouseDone: data.warehouseDone.present
           ? data.warehouseDone.value
           : this.warehouseDone,
+      firestoreId:
+          data.firestoreId.present ? data.firestoreId.value : this.firestoreId,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       archived: data.archived.present ? data.archived.value : this.archived,
     );
   }
@@ -533,6 +613,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           ..write('currentStage: $currentStage, ')
           ..write('slaughterDone: $slaughterDone, ')
           ..write('warehouseDone: $warehouseDone, ')
+          ..write('firestoreId: $firestoreId, ')
+          ..write('synced: $synced, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('archived: $archived')
           ..write(')'))
         .toString();
@@ -555,6 +638,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       currentStage,
       slaughterDone,
       warehouseDone,
+      firestoreId,
+      synced,
+      updatedAt,
       archived);
   @override
   bool operator ==(Object other) =>
@@ -575,6 +661,9 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           other.currentStage == this.currentStage &&
           other.slaughterDone == this.slaughterDone &&
           other.warehouseDone == this.warehouseDone &&
+          other.firestoreId == this.firestoreId &&
+          other.synced == this.synced &&
+          other.updatedAt == this.updatedAt &&
           other.archived == this.archived);
 }
 
@@ -594,6 +683,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   final Value<String> currentStage;
   final Value<bool> slaughterDone;
   final Value<bool> warehouseDone;
+  final Value<String?> firestoreId;
+  final Value<bool> synced;
+  final Value<DateTime> updatedAt;
   final Value<bool> archived;
   const ShipmentsCompanion({
     this.id = const Value.absent(),
@@ -611,6 +703,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.currentStage = const Value.absent(),
     this.slaughterDone = const Value.absent(),
     this.warehouseDone = const Value.absent(),
+    this.firestoreId = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.archived = const Value.absent(),
   });
   ShipmentsCompanion.insert({
@@ -629,6 +724,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.currentStage = const Value.absent(),
     this.slaughterDone = const Value.absent(),
     this.warehouseDone = const Value.absent(),
+    this.firestoreId = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.archived = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Shipment> custom({
@@ -647,6 +745,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     Expression<String>? currentStage,
     Expression<bool>? slaughterDone,
     Expression<bool>? warehouseDone,
+    Expression<String>? firestoreId,
+    Expression<bool>? synced,
+    Expression<DateTime>? updatedAt,
     Expression<bool>? archived,
   }) {
     return RawValuesInsertable({
@@ -665,6 +766,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       if (currentStage != null) 'current_stage': currentStage,
       if (slaughterDone != null) 'slaughter_done': slaughterDone,
       if (warehouseDone != null) 'warehouse_done': warehouseDone,
+      if (firestoreId != null) 'firestore_id': firestoreId,
+      if (synced != null) 'synced': synced,
+      if (updatedAt != null) 'updated_at': updatedAt,
       if (archived != null) 'archived': archived,
     });
   }
@@ -685,6 +789,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       Value<String>? currentStage,
       Value<bool>? slaughterDone,
       Value<bool>? warehouseDone,
+      Value<String?>? firestoreId,
+      Value<bool>? synced,
+      Value<DateTime>? updatedAt,
       Value<bool>? archived}) {
     return ShipmentsCompanion(
       id: id ?? this.id,
@@ -702,6 +809,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       currentStage: currentStage ?? this.currentStage,
       slaughterDone: slaughterDone ?? this.slaughterDone,
       warehouseDone: warehouseDone ?? this.warehouseDone,
+      firestoreId: firestoreId ?? this.firestoreId,
+      synced: synced ?? this.synced,
+      updatedAt: updatedAt ?? this.updatedAt,
       archived: archived ?? this.archived,
     );
   }
@@ -754,6 +864,15 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     if (warehouseDone.present) {
       map['warehouse_done'] = Variable<bool>(warehouseDone.value);
     }
+    if (firestoreId.present) {
+      map['firestore_id'] = Variable<String>(firestoreId.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
@@ -778,6 +897,9 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
           ..write('currentStage: $currentStage, ')
           ..write('slaughterDone: $slaughterDone, ')
           ..write('warehouseDone: $warehouseDone, ')
+          ..write('firestoreId: $firestoreId, ')
+          ..write('synced: $synced, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('archived: $archived')
           ..write(')'))
         .toString();
@@ -1152,6 +1274,9 @@ typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> currentStage,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
+  Value<String?> firestoreId,
+  Value<bool> synced,
+  Value<DateTime> updatedAt,
   Value<bool> archived,
 });
 typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
@@ -1170,6 +1295,9 @@ typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> currentStage,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
+  Value<String?> firestoreId,
+  Value<bool> synced,
+  Value<DateTime> updatedAt,
   Value<bool> archived,
 });
 
@@ -1226,6 +1354,15 @@ class $$ShipmentsTableFilterComposer
 
   ColumnFilters<bool> get warehouseDone => $composableBuilder(
       column: $table.warehouseDone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get firestoreId => $composableBuilder(
+      column: $table.firestoreId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get archived => $composableBuilder(
       column: $table.archived, builder: (column) => ColumnFilters(column));
@@ -1291,6 +1428,15 @@ class $$ShipmentsTableOrderingComposer
       column: $table.warehouseDone,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get firestoreId => $composableBuilder(
+      column: $table.firestoreId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get archived => $composableBuilder(
       column: $table.archived, builder: (column) => ColumnOrderings(column));
 }
@@ -1349,6 +1495,15 @@ class $$ShipmentsTableAnnotationComposer
   GeneratedColumn<bool> get warehouseDone => $composableBuilder(
       column: $table.warehouseDone, builder: (column) => column);
 
+  GeneratedColumn<String> get firestoreId => $composableBuilder(
+      column: $table.firestoreId, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
 }
@@ -1391,6 +1546,9 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> currentStage = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
+            Value<String?> firestoreId = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
             Value<bool> archived = const Value.absent(),
           }) =>
               ShipmentsCompanion(
@@ -1409,6 +1567,9 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             currentStage: currentStage,
             slaughterDone: slaughterDone,
             warehouseDone: warehouseDone,
+            firestoreId: firestoreId,
+            synced: synced,
+            updatedAt: updatedAt,
             archived: archived,
           ),
           createCompanionCallback: ({
@@ -1427,6 +1588,9 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> currentStage = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
+            Value<String?> firestoreId = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
             Value<bool> archived = const Value.absent(),
           }) =>
               ShipmentsCompanion.insert(
@@ -1445,6 +1609,9 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             currentStage: currentStage,
             slaughterDone: slaughterDone,
             warehouseDone: warehouseDone,
+            firestoreId: firestoreId,
+            synced: synced,
+            updatedAt: updatedAt,
             archived: archived,
           ),
           withReferenceMapper: (p0) => p0

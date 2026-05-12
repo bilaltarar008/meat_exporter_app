@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/database/app_database.dart';
-import '../../core/database/database_provider.dart';
+import '../../core/services/firestore_provider.dart';
 
 class SlaughterhouseHomeScreen extends StatefulWidget {
   const SlaughterhouseHomeScreen({super.key});
@@ -23,22 +22,27 @@ class _SlaughterhouseHomeScreenState
   final blue = const Color(0xFF2563EB);
   final green = const Color(0xFF16A34A);
   final amber = const Color(0xFFF59E0B);
-  final red = const Color(0xFFDC2626);
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
+
       backgroundColor: bgColor,
 
       appBar: AppBar(
+
         elevation: 0,
+
         backgroundColor: Colors.white,
 
         title: const Text(
           "Slaughter Operations",
+
           style: TextStyle(
             color: Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
           ),
         ),
 
@@ -53,724 +57,604 @@ class _SlaughterhouseHomeScreenState
           ),
 
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            onPressed: () => FirebaseAuth.instance.signOut(),
+            icon: const Icon(
+              Icons.logout,
+              color: Colors.red,
+            ),
+
+            onPressed: () {
+              FirebaseAuth.instance.signOut();
+            },
           ),
         ],
       ),
 
-      body: StreamBuilder<List<Shipment>>(
-        stream: db.watchSlaughterShipments(),
+      body: SafeArea(
 
-        builder: (context, snapshot) {
+        child: StreamBuilder<List<Map<String, dynamic>>>(
 
-          final allShipments = snapshot.data ?? [];
+          stream:
+          firestoreService.watchSlaughterShipments(),
 
-          final shipments = allShipments.where((s) {
+          builder: (context, snapshot) {
 
-            final code =
-            (s.shipmentCode ?? '').toLowerCase();
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
 
-            final title =
-            s.title.toLowerCase();
-
-            final matchesSearch =
-                code.contains(searchQuery) ||
-                    title.contains(searchQuery);
-
-            bool matchesFilter = true;
-
-            if (selectedFilter == 'pending') {
-              matchesFilter =
-                  s.status.toLowerCase().contains('slaughter');
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
 
-            if (selectedFilter == 'completed') {
-              matchesFilter =
-                  s.status.toLowerCase().contains('completed');
+            if (snapshot.hasError) {
+
+              return Center(
+                child: Text(
+                  snapshot.error.toString(),
+                ),
+              );
             }
 
-            return matchesSearch && matchesFilter;
+            final firestoreShipments =
+                snapshot.data ?? [];
 
-          }).toList();
+            final allShipments =
+            firestoreShipments.map((data) {
 
-          return Column(
-            children: [
+              return Shipment(
 
-              /// SEARCH + FILTERS
-              Padding(
-                padding: EdgeInsets.all(16.w),
+                id: 0,
 
-                child: Column(
-                  children: [
+                title: data['title'] ?? '',
 
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: "Search shipments...",
-                        prefixIcon: const Icon(Icons.search),
+                shipmentCode:
+                data['shipmentCode'],
 
-                        filled: true,
-                        fillColor: Colors.white,
+                origin: 'Pakistan',
 
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                destination: 'Dubai',
 
-                      onChanged: (v) {
-                        setState(() {
-                          searchQuery = v.toLowerCase();
-                        });
-                      },
-                    ),
+                nextAction:
+                'Move To Warehouse',
 
-                    SizedBox(height: 14.h),
+                paymentStatus: 'pending',
 
-                    SizedBox(
-                      height: 42.h,
+                paymentDue: null,
 
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
+                purchaseCost:
+                (data['purchaseCost'] ?? 0)
+                    .toDouble(),
 
-                        children: [
+                salePrice:
+                (data['salePrice'] ?? 0)
+                    .toDouble(),
 
-                          _filterChip('all', 'All'),
-                          _filterChip('pending', 'Pending'),
-                          _filterChip('completed', 'Completed'),
-                        ],
-                      ),
-                    ),
+                weight:
+                (data['weight'] ?? 0)
+                    .toDouble(),
 
-                    SizedBox(height: 12.h),
+                status:
+                data['status'] ?? '',
 
-                    /// KPI ROW
-                    /// KPI ROW
-                    Row(
-                      children: [
+                currentStage:
+                data['currentStage'] ?? '',
 
-                        Expanded(
-                          child: _kpiCard(
-                            "Pending",
-                            shipments.length.toString(),
-                            amber,
-                            Icons.pending_actions_rounded,
-                          ),
-                        ),
+                slaughterDone: false,
 
-                        SizedBox(width: 8.w),
+                warehouseDone: false,
 
-                        Expanded(
-                          child: _kpiCard(
-                            "Processing",
-                            shipments
-                                .where((e) =>
-                            e.currentStage == 'slaughter')
-                                .length
-                                .toString(),
-                            blue,
-                            Icons.precision_manufacturing_rounded,
-                          ),
-                        ),
+                firestoreId:
+                data['id'],
 
-                        SizedBox(width: 8.w),
+                synced: true,
 
-                        Expanded(
-                          child: _kpiCard(
-                            "Done",
-                            allShipments
-                                .where((e) =>
-                                e.status
-                                    .toLowerCase()
-                                    .contains('completed'))
-                                .length
-                                .toString(),
-                            green,
-                            Icons.check_circle_outline_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                updatedAt: DateTime.now(),
 
-              /// LIST
-              Expanded(
-                child: shipments.isEmpty
-                    ? const Center(
-                  child: Text(
-                    "No slaughter tasks",
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-                    : ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: shipments.length,
+                archived:
+                data['archived'] ?? false,
+              );
 
-                  itemBuilder: (_, i) {
-                    final s = shipments[i];
+            }).toList();
 
-                    return _shipmentCard(s);
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+            final shipments =
+            allShipments.where((s) {
 
-  /// ================= SHIPMENT CARD =================
+              final code =
+              (s.shipmentCode ?? '')
+                  .toLowerCase();
 
-  Widget _shipmentCard(Shipment s) {
+              final title =
+              s.title.toLowerCase();
 
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 10.h),
-      elevation: 4,
+              final matchesSearch =
+                  code.contains(searchQuery) ||
+                      title.contains(searchQuery);
 
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+              bool matchesFilter = true;
 
-      child: Padding(
-        padding: EdgeInsets.all(14.w),
+              if (selectedFilter == 'pending') {
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+                matchesFilter =
+                    s.currentStage ==
+                        'slaughter';
+              }
 
-          children: [
+              if (selectedFilter ==
+                  'completed') {
 
-            /// HEADER
-            Row(
+                matchesFilter =
+                    s.status
+                        .toLowerCase()
+                        .contains(
+                        'completed');
+              }
+
+              return matchesSearch &&
+                  matchesFilter;
+
+            }).toList();
+
+            return Column(
+
               children: [
 
-                Expanded(
+                Padding(
+
+                  padding:
+                  const EdgeInsets.all(16),
+
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
 
                     children: [
 
-                      Text(
-                        s.shipmentCode ?? "Shipment",
+                      TextField(
 
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF111827),
+                        decoration: InputDecoration(
+
+                          hintText:
+                          "Search shipments...",
+
+                          prefixIcon:
+                          const Icon(
+                            Icons.search,
+                          ),
+
+                          filled: true,
+
+                          fillColor:
+                          Colors.white,
+
+                          border:
+                          OutlineInputBorder(
+
+                            borderRadius:
+                            BorderRadius.circular(
+                              18,
+                            ),
+
+                            borderSide:
+                            BorderSide.none,
+                          ),
                         ),
+
+                        onChanged: (v) {
+
+                          setState(() {
+
+                            searchQuery =
+                                v.toLowerCase();
+                          });
+                        },
                       ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 14),
 
-                      Text(
-                        s.title,
+                      Row(
 
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
-                          fontWeight: FontWeight.w500,
-                        ),
+                        children: [
+
+                          _filterChip(
+                            'all',
+                            'All',
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          _filterChip(
+                            'pending',
+                            'Pending',
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          _filterChip(
+                            'completed',
+                            'Completed',
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
 
-                _statusChip("Processing"),
-              ],
-            ),
-
-            SizedBox(height: 10.h),
-
-            /// NEXT ACTION
-            const Text(
-              "Next: Record cuts & upload certificates",
-
-              style: TextStyle(
-                color: Colors.orange,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-
-            SizedBox(height: 12.h),
-
-            /// TRACKER
-            _tracker(),
-
-            SizedBox(height: 14.h),
-
-            /// METRICS
-            Row(
-              mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-
-              children: [
-
-                _metric(
-                  "Weight",
-                  "${s.weight} kg",
-                ),
-
-                _metric(
-                  "Stage",
-                  "Slaughter",
-                ),
-
-                _metric(
-                  "Queue",
-                  "Active",
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16.h),
-
-            /// ACTION BUTTONS
-            Row(
-              children: [
-
                 Expanded(
-                  child: OutlinedButton.icon(
 
-                    onPressed: () {},
+                  child: shipments.isEmpty
 
-                    icon: const Icon(
-                      Icons.upload_file_rounded,
-                      size: 18,
+                      ? const Center(
+                    child: Text(
+                      "No slaughter shipments",
+                    ),
+                  )
+
+                      : ListView.builder(
+
+                    padding:
+                    const EdgeInsets.symmetric(
+                      horizontal: 16,
                     ),
 
-                    label: const Text(
-                      "Documents",
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    itemCount:
+                    shipments.length,
 
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: blue,
+                    itemBuilder: (_, i) {
 
-                      side: BorderSide(color: blue),
+                      final s =
+                      shipments[i];
 
-                      padding: EdgeInsets.symmetric(
-                        vertical: 10.h,
-                      ),
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(width: 10.w),
-
-                Expanded(
-                  child: ElevatedButton.icon(
-
-                    onPressed: () async {
-
-                      await db.completeSlaughter(s.id);
+                      return _shipmentCard(
+                        s,
+                      );
                     },
-
-                    icon: const Icon(
-                      Icons.check_circle,
-                      size: 18,
-                    ),
-
-                    label: const Text(
-                      "Complete",
-                      style: TextStyle(fontSize: 12),
-                    ),
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-
-                      foregroundColor: Colors.white,
-
-                      elevation: 0,
-
-                      padding: EdgeInsets.symmetric(
-                        vertical: 10.h,
-                      ),
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(12),
-                      ),
-                    ),
                   ),
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  /// ================= HELPERS =================
-  Widget _kpiCard(
-      String title,
-      String value,
-      Color color,
-      IconData icon,
-      ) {
+  Widget _shipmentCard(Shipment s) {
 
     return Container(
-      height: 115.h,
 
-      padding: EdgeInsets.symmetric(
-        horizontal: 10.w,
-        vertical: 10.h,
+      margin:
+      const EdgeInsets.only(
+        bottom: 16,
       ),
 
+      padding:
+      const EdgeInsets.all(16),
+
       decoration: BoxDecoration(
+
         color: Colors.white,
 
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+        BorderRadius.circular(22),
 
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color:
+          const Color(0xFFE2E8F0),
         ),
       ),
 
       child: Column(
+
         crossAxisAlignment:
         CrossAxisAlignment.start,
 
-        mainAxisAlignment:
-        MainAxisAlignment.spaceBetween,
-
         children: [
 
-          Container(
-            padding: EdgeInsets.all(5.w),
-
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
-
-              borderRadius:
-              BorderRadius.circular(10),
-            ),
-
-            child: Icon(
-              icon,
-              color: color,
-              size: 16.sp,
-            ),
-          ),
-
-          Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
+          Row(
 
             children: [
 
-              Text(
-                value,
+              Expanded(
 
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
-                  height: 1,
+                child: Column(
+
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+                  children: [
+
+                    Text(
+
+                      s.shipmentCode ??
+                          "Shipment",
+
+                      style:
+                      const TextStyle(
+
+                        fontSize: 20,
+
+                        fontWeight:
+                        FontWeight.bold,
+
+                        color:
+                        Color(0xFF0F172A),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+
+                      s.title,
+
+                      style:
+                      const TextStyle(
+                        color:
+                        Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              SizedBox(height: 2.h),
+              Container(
 
-              Text(
-                title,
+                padding:
+                const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
 
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                decoration: BoxDecoration(
 
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
-                  height: 1,
+                  color:
+                  amber.withOpacity(0.1),
+
+                  borderRadius:
+                  BorderRadius.circular(
+                    30,
+                  ),
+                ),
+
+                child: Text(
+
+                  "Processing",
+
+                  style: TextStyle(
+                    color: amber,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Text(
+            "Next: Move shipment to warehouse",
+
+            style: TextStyle(
+              color: amber,
+              fontWeight:
+              FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+
+            children: [
+
+              Expanded(
+                child: _infoBox(
+                  "Weight",
+                  "${s.weight} kg",
+                  Icons.scale_rounded,
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: _infoBox(
+                  "Status",
+                  s.status,
+                  Icons.inventory_2_outlined,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          SizedBox(
+
+            width: double.infinity,
+
+            child: ElevatedButton(
+
+              onPressed: () async {
+
+                await firestoreService
+                    .moveToWarehouse(
+                  s.firestoreId!,
+                );
+              },
+
+              style:
+              ElevatedButton.styleFrom(
+
+                backgroundColor:
+                blue,
+
+                padding:
+                const EdgeInsets.symmetric(
+                  vertical: 14,
+                ),
+
+                shape:
+                RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(
+                    14,
+                  ),
+                ),
+              ),
+
+              child: const Text(
+
+                "Move To Warehouse",
+
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight:
+                  FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _filterChip(String value, String label) {
+  Widget _infoBox(
+      String title,
+      String value,
+      IconData icon,
+      ) {
 
-    final selected = selectedFilter == value;
+    return Container(
 
-    return Padding(
-      padding: EdgeInsets.only(right: 10.w),
+      padding:
+      const EdgeInsets.all(14),
+
+      decoration: BoxDecoration(
+
+        color:
+        const Color(0xFFF8FAFC),
+
+        borderRadius:
+        BorderRadius.circular(16),
+      ),
+
+      child: Row(
+
+        children: [
+
+          Icon(
+            icon,
+            color: blue,
+          ),
+
+          const SizedBox(width: 10),
+
+          Expanded(
+
+            child: Column(
+
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+
+              children: [
+
+                Text(
+
+                  title,
+
+                  style:
+                  const TextStyle(
+                    fontSize: 11,
+                    color:
+                    Color(0xFF64748B),
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+
+                  value,
+
+                  overflow:
+                  TextOverflow.ellipsis,
+
+                  style:
+                  const TextStyle(
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(
+      String value,
+      String label,
+      ) {
+
+    final selected =
+        selectedFilter == value;
+
+    return Expanded(
 
       child: GestureDetector(
+
         onTap: () {
+
           setState(() {
+
             selectedFilter = value;
           });
         },
 
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 18.w,
-            vertical: 10.h,
+
+          padding:
+          const EdgeInsets.symmetric(
+            vertical: 12,
           ),
 
           decoration: BoxDecoration(
-            color: selected ? blue : Colors.white,
 
-            borderRadius: BorderRadius.circular(30),
+            color:
+            selected
+                ? blue
+                : Colors.white,
+
+            borderRadius:
+            BorderRadius.circular(30),
 
             border: Border.all(
-              color: selected
-                  ? blue
-                  : const Color(0xFFE2E8F0),
+              color:
+              const Color(0xFFE2E8F0),
             ),
           ),
 
+          alignment: Alignment.center,
+
           child: Text(
+
             label,
 
             style: TextStyle(
-              fontWeight: FontWeight.w600,
 
-              color: selected
+              color:
+              selected
                   ? Colors.white
-                  : const Color(0xFF475569),
+                  : Colors.black87,
+
+              fontWeight:
+              FontWeight.w600,
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _statusChip(String text) {
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 12.w,
-        vertical: 6.h,
-      ),
-
-      decoration: BoxDecoration(
-        color: amber.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
-      ),
-
-      child: Text(
-        text,
-
-        style: TextStyle(
-          color: amber,
-          fontWeight: FontWeight.w600,
-          fontSize: 9.sp,
-        ),
-      ),
-    );
-  }
-
-  Widget _infoTile(
-      String label,
-      String value,
-      IconData icon,
-      ) {
-
-    return Container(
-      padding: EdgeInsets.all(14.w),
-
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-      ),
-
-      child: Row(
-        children: [
-
-          Container(
-            padding: const EdgeInsets.all(8),
-
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-
-            child: Icon(
-              icon,
-              size: 18,
-              color: blue,
-            ),
-          ),
-
-          SizedBox(width: 8.w),
-
-          Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-
-            children: [
-
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 9,
-                ),
-              ),
-
-              SizedBox(height: 2.h),
-
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timelineStep(bool done, String title) {
-
-    return Column(
-      children: [
-
-        CircleAvatar(
-          radius: 7,
-
-          backgroundColor:
-          done ? green : Colors.grey.shade300,
-
-          child: Icon(
-            done ? Icons.check : Icons.circle,
-            size: 9,
-            color: Colors.white,
-          ),
-        ),
-
-        SizedBox(height: 6.h),
-
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 10.sp,
-            color: done ? green : Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tracker() {
-
-    return Row(
-      children: [
-
-        _circle(true, "Purchase"),
-        _divider(true),
-
-        _circle(true, "Slaughter"),
-        _divider(false),
-
-        _circle(false, "Warehouse"),
-      ],
-    );
-  }
-
-  Widget _circle(bool active, String label) {
-
-    return Column(
-      children: [
-
-        CircleAvatar(
-          radius: 5,
-
-          backgroundColor:
-          active
-              ? Colors.orange
-              : Colors.grey.shade300,
-        ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          label,
-
-          style: TextStyle(
-            fontSize: 10,
-            color: active
-                ? Colors.orange
-                : Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _divider(bool active) {
-
-    return Expanded(
-      child: Container(
-        height: 2,
-
-        color: active
-            ? Colors.orange
-            : Colors.grey.shade300,
-      ),
-    );
-  }
-
-  Widget _metric(
-      String label,
-      String value,
-      ) {
-
-    return Column(
-      children: [
-
-        Text(
-          label,
-
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF9CA3AF),
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          value,
-
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF111827),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _line(bool active) {
-
-    return Expanded(
-      child: Container(
-        height: 2,
-        margin: EdgeInsets.only(bottom: 18.h),
-
-        color: active
-            ? green
-            : Colors.grey.shade300,
       ),
     );
   }
