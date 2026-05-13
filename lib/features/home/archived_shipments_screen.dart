@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/database/database_provider.dart';
+import '../../core/services/firestore_provider.dart';
 import '../../../../core/database/app_database.dart';
 
 class ArchivedShipmentsScreen extends StatelessWidget {
@@ -32,9 +32,9 @@ class ArchivedShipmentsScreen extends StatelessWidget {
         ),
       ),
 
-      body: StreamBuilder<List<Shipment>>(
+      body: StreamBuilder<List<Map<String, dynamic>>>(
 
-        stream: db.watchArchivedShipments(),
+        stream: firestoreService.watchArchivedShipments(),
 
         builder: (context, snapshot) {
 
@@ -45,7 +45,112 @@ class ArchivedShipmentsScreen extends StatelessWidget {
             );
           }
 
-          final shipments = snapshot.data!;
+          final archivedData = snapshot.data!;
+
+          final shipments = archivedData.map((data) {
+
+            return Shipment(
+
+              id: 0,
+
+              title: data['title'] ?? '',
+
+              shipmentCode:
+              data['shipmentCode'],
+
+              origin:
+              data['originCountry'] ?? 'Pakistan',
+
+              destination:
+              data['destinationCountry'] ?? 'Dubai',
+
+              slaughterhouse:
+              data['slaughterhouse'],
+
+              freightForwarder:
+              data['freightForwarder'],
+
+              airline:
+              data['airline'],
+
+              destinationWarehouse:
+              data['destinationWarehouse'],
+
+              supplier:
+              data['supplier'],
+
+              buyer:
+              data['buyer'],
+
+              animalType:
+              data['animalType'],
+
+              quantity:
+              (data['quantity'] ?? 0).toDouble(),
+
+              purchaseWeight:
+              (data['purchaseWeight'] ?? 0).toDouble(),
+
+              carcassWeight: 0,
+
+              netSaleWeight: 0,
+
+              nextAction:
+              data['nextAction'] ??
+                  'Continue Processing',
+
+              paymentStatus:
+              data['paymentStatus'] ?? 'pending',
+
+              paymentDue: null,
+
+              paymentReceivedDate: null,
+
+              outstandingBalance: 0,
+
+              purchaseCost:
+              (data['purchaseCost'] ?? 0).toDouble(),
+
+              salePrice:
+              (data['salePrice'] ?? 0).toDouble(),
+
+              weight:
+              (data['purchaseWeight'] ?? 0).toDouble(),
+
+              awbNumber:
+              data['awbNumber'],
+
+              flightNumber:
+              data['flightNumber'],
+
+              departureDate: null,
+
+              arrivalDate: null,
+
+              notes:
+              data['notes'],
+
+              status:
+              data['status'] ?? '',
+
+              currentStage:
+              data['currentStage'] ?? 'owner',
+
+              slaughterDone: false,
+
+              warehouseDone: false,
+
+              firestoreId:
+              data['id'],
+
+              synced: true,
+
+              updatedAt: DateTime.now(),
+
+              archived:
+              data['archived'] ?? false,
+            );
+          }).toList();
 
           /// EMPTY STATE
 
@@ -172,122 +277,280 @@ class ArchivedShipmentsScreen extends StatelessWidget {
 
                             const SizedBox(height: 4),
 
-                            Text(
-                              shipment.title,
 
-                              style: const TextStyle(
-                                color: Color(0xFF6B7280),
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Container(
-
-                              padding:
-                              const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-
-                              decoration: BoxDecoration(
-                                color:
-                                Colors.orange.withOpacity(0.1),
-
-                                borderRadius:
-                                BorderRadius.circular(20),
-                              ),
-
-                              child: const Text(
-                                "Archived",
-
-                                style: TextStyle(
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
 
-                      /// RESTORE BUTTON
+                      Column(
+                        children: [
 
-                      ElevatedButton.icon(
+                          /// UNDO BUTTON
 
-                        style: ElevatedButton.styleFrom(
+                          ElevatedButton.icon(
 
-                          backgroundColor:
-                          const Color(0xFF2563EB),
+                            style: ElevatedButton.styleFrom(
 
-                          padding:
-                          const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
+                              backgroundColor:
+                              const Color(0xFF2563EB),
 
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.circular(12),
-                          ),
-                        ),
-
-                        onPressed: () async {
-
-                          await db.restoreShipment(
-                            shipment.id,
-                          );
-
-                          if (context.mounted) {
-
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(
-
-                              SnackBar(
-
-                                backgroundColor:
-                                Colors.green,
-
-                                behavior:
-                                SnackBarBehavior.floating,
-
-                                shape:
-                                RoundedRectangleBorder(
-                                  borderRadius:
-                                  BorderRadius.circular(12),
-                                ),
-
-                                content: const Text(
-                                  "Shipment restored successfully",
-
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight:
-                                    FontWeight.w600,
-                                  ),
-                                ),
+                              padding:
+                              const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
                               ),
-                            );
-                          }
-                        },
 
-                        icon: const Icon(
-                          Icons.undo_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(12),
+                              ),
+                            ),
 
-                        label: const Text(
+                            onPressed: () async {
 
-                          "Undo",
+                              final confirm =
+                              await showDialog<bool>(
 
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                                context: context,
+
+                                builder: (_) {
+
+                                  return AlertDialog(
+
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(18),
+                                    ),
+
+                                    title: const Text(
+                                      "Restore Shipment",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    content: Text(
+                                      'Restore "${shipment.title}" back to active shipments?',
+                                    ),
+
+                                    actions: [
+
+                                      TextButton(
+
+                                        onPressed: () {
+                                          Navigator.pop(context, false);
+                                        },
+
+                                        child: const Text(
+                                          "Cancel",
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+
+                                      ElevatedButton(
+
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                        ),
+
+                                        onPressed: () {
+                                          Navigator.pop(context, true);
+                                        },
+
+                                        child: const Text(
+                                          "Restore",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (confirm != true) return;
+
+                              await restoreShipment(
+                                shipment.firestoreId!,
+                              );
+
+                              if (context.mounted) {
+
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+
+                                  SnackBar(
+
+                                    backgroundColor:
+                                    Colors.red,
+
+                                    behavior:
+                                    SnackBarBehavior.floating,
+
+                                    shape:
+                                    RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(12),
+                                    ),
+
+                                    content: const Text(
+                                      "Shipment restored successfully",
+
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight:
+                                        FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+
+                            icon: const Icon(
+                              Icons.undo_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+
+                            label: const Text(
+
+                              "Undo",
+
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+
+                          const SizedBox(height: 10),
+
+                          /// DELETE BUTTON
+
+                          ElevatedButton.icon(
+
+                            style: ElevatedButton.styleFrom(
+
+                              backgroundColor: Colors.red,
+
+                              padding:
+                              const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(12),
+                              ),
+                            ),
+
+                            onPressed: () async {
+
+                              final confirm =
+                              await showDialog<bool>(
+
+                                context: context,
+
+                                builder: (_) {
+
+                                  return AlertDialog(
+
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(18),
+                                    ),
+
+                                    title: const Text(
+                                      "Delete Shipment",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    content: Text(
+                                      'Are you sure you want to permanently delete "${shipment.title}" shipment?',
+                                    ),
+
+                                    actions: [
+
+                                      TextButton(
+
+                                        onPressed: () {
+                                          Navigator.pop(context, false);
+                                        },
+
+                                        child: const Text(
+                                          "Cancel",
+                                        ),
+                                      ),
+
+                                      ElevatedButton(
+
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                        ),
+
+                                        onPressed: () {
+                                          Navigator.pop(context, true);
+                                        },
+
+                                        child: const Text(
+                                          "Delete",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (confirm != true) return;
+
+                              await firestoreService.deleteShipment(
+                                shipment.firestoreId!,
+                              );
+
+                              if (context.mounted) {
+
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+
+                                  const SnackBar(
+                                    content: Text(
+                                      "Shipment deleted permanently",
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+
+                            label: const Text(
+
+                              "Delete",
+
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        ],
+                      )
                     ],
                   ),
                 ),

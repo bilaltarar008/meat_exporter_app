@@ -15,11 +15,36 @@ class ShipmentFirestoreService {
   /// ================= CREATE =================
 
   Future<void> createShipment({
+
     required String shipmentCode,
-    required String title,
-    required double cost,
-    required double sale,
-    required double weight,
+
+    required String originCountry,
+    required String originCity,
+
+    required String destinationCountry,
+    required String destinationCity,
+
+    required String slaughterhouse,
+    required String destinationWarehouse,
+
+    required String supplier,
+    required String buyer,
+
+    required String animalType,
+
+    required double quantity,
+    required double purchaseWeight,
+
+    required double purchaseCost,
+    required double salePrice,
+
+    required String freightForwarder,
+    required String airline,
+
+    required String awbNumber,
+    required String flightNumber,
+
+    required String notes,
   }) async {
 
     final user =
@@ -28,27 +53,76 @@ class ShipmentFirestoreService {
     await shipments.add({
 
       'userId': user?.uid,
-
       'email': user?.email,
 
       'shipmentCode': shipmentCode,
 
-      'title': title,
+      /// ROUTE
+      'originCountry': originCountry,
+      'originCity': originCity,
 
-      'purchaseCost': cost,
+      'destinationCountry': destinationCountry,
+      'destinationCity': destinationCity,
 
-      'salePrice': sale,
+      /// OPERATIONS
+      'slaughterhouse': slaughterhouse,
+      'destinationWarehouse': destinationWarehouse,
 
-      'weight': weight,
+      /// PURCHASE
+      'supplier': supplier,
+      'buyer': buyer,
 
+      'animalType': animalType,
+
+      'quantity': quantity,
+      'purchaseWeight': purchaseWeight,
+
+      'purchaseCost': purchaseCost,
+      'salePrice': salePrice,
+
+      /// FLIGHT
+      'freightForwarder': freightForwarder,
+      'airline': airline,
+
+      'awbNumber': awbNumber,
+      'flightNumber': flightNumber,
+
+      /// NOTES
+      'notes': notes,
+
+      /// STATUS
       'currentStage': 'owner',
 
       'status': 'Purchase Confirmed',
 
+      'nextAction': 'Send to slaughterhouse',
+
+      /// PAYMENT
+      'paymentStatus': 'Pending',
+
+      'paymentCompleted': false,
+
+      /// TIMELINE
+      'timeline': [],
+
+      /// CUTS
+      'cuts': [],
+
+      /// EXPENSES
+      'expenses': [],
+
+      /// DOCUMENTS
+      'documents': [],
+
+      /// ACTIVITY
+      'activityLogs': [],
+
+      /// FLAGS
       'archived': false,
 
-      'createdAt':
-      FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -109,6 +183,10 @@ class ShipmentFirestoreService {
       'currentStage',
       isEqualTo: 'slaughter',
     )
+        .where(
+      'archived',
+      isEqualTo: false,
+    )
         .snapshots()
         .map((snapshot) {
 
@@ -124,6 +202,14 @@ class ShipmentFirestoreService {
       }).toList();
     });
   }
+  /// ================= DELETE =================
+
+  Future<void> deleteShipment(
+      String docId,
+      ) async {
+
+    await shipments.doc(docId).delete();
+  }
 
   Stream<List<Map<String, dynamic>>>
   watchWarehouseShipments() {
@@ -132,6 +218,10 @@ class ShipmentFirestoreService {
         .where(
       'currentStage',
       isEqualTo: 'warehouse',
+    )
+        .where(
+      'archived',
+      isEqualTo: false,
     )
         .snapshots()
         .map((snapshot) {
@@ -160,6 +250,11 @@ class ShipmentFirestoreService {
         .where(
       'userId',
       isEqualTo: user?.uid,
+    )
+
+        .where(
+      'archived',
+      isEqualTo: false,
     )
 
         .snapshots()
@@ -283,6 +378,40 @@ class ShipmentFirestoreService {
     });
   }
 
+  Stream<List<Map<String, dynamic>>> watchArchivedShipments() {
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    return shipments
+
+        .where(
+      'userId',
+      isEqualTo: user?.uid,
+    )
+
+        .where(
+      'archived',
+      isEqualTo: true,
+    )
+
+        .snapshots()
+
+        .map((snapshot) {
+
+      return snapshot.docs.map((doc) {
+
+        final data =
+        doc.data() as Map<String, dynamic>;
+
+        data['id'] = doc.id;
+
+        return data;
+
+      }).toList();
+    });
+  }
+
 
 
   /// ================= ARCHIVE =================
@@ -293,6 +422,19 @@ class ShipmentFirestoreService {
     await shipments.doc(docId).update({
 
       'archived': true,
+
+      'updatedAt':
+      FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> restoreShipment(
+      String docId,
+      ) async {
+
+    await shipments.doc(docId).update({
+
+      'archived': false,
 
       'updatedAt':
       FieldValue.serverTimestamp(),

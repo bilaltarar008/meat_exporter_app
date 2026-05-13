@@ -2,16 +2,19 @@ import 'package:drift/drift.dart';
 
 class Shipments extends Table {
 
-  /// PRIMARY KEY
+  /// ================= PRIMARY =================
+
   IntColumn get id => integer().autoIncrement()();
 
-  /// BASIC INFO
+  /// ================= BASIC =================
+
   TextColumn get title => text()();
 
   TextColumn get shipmentCode =>
       text().nullable()();
 
-  /// ROUTE
+  /// ================= ROUTE =================
+
   TextColumn get origin =>
       text().withDefault(
         const Constant('Pakistan'),
@@ -22,13 +25,62 @@ class Shipments extends Table {
         const Constant('Dubai'),
       )();
 
-  /// ACTIONS
+  /// ================= OPERATIONS =================
+
+  TextColumn get slaughterhouse =>
+      text().nullable()();
+
+  TextColumn get freightForwarder =>
+      text().nullable()();
+
+  TextColumn get airline =>
+      text().nullable()();
+
+  TextColumn get destinationWarehouse =>
+      text().nullable()();
+
+  /// ================= PURCHASE =================
+
+  TextColumn get supplier =>
+      text().nullable()();
+
+  TextColumn get buyer =>
+      text().nullable()();
+
+  TextColumn get animalType =>
+      text().nullable()();
+
+  RealColumn get quantity =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  RealColumn get purchaseWeight =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  /// ================= WEIGHTS =================
+
+  RealColumn get carcassWeight =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  RealColumn get netSaleWeight =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  /// ================= ACTIONS =================
+
   TextColumn get nextAction =>
       text().withDefault(
         const Constant('Send to Slaughter'),
       )();
 
-  /// PAYMENT
+  /// ================= PAYMENT =================
+
   TextColumn get paymentStatus =>
       text().withDefault(
         const Constant('pending'),
@@ -37,7 +89,16 @@ class Shipments extends Table {
   DateTimeColumn get paymentDue =>
       dateTime().nullable()();
 
-  /// FINANCE
+  DateTimeColumn get paymentReceivedDate =>
+      dateTime().nullable()();
+
+  RealColumn get outstandingBalance =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  /// ================= FINANCE =================
+
   RealColumn get purchaseCost =>
       real().withDefault(
         const Constant(0),
@@ -53,7 +114,27 @@ class Shipments extends Table {
         const Constant(0),
       )();
 
-  /// STATUS FLOW
+  /// ================= FLIGHT =================
+
+  TextColumn get awbNumber =>
+      text().nullable()();
+
+  TextColumn get flightNumber =>
+      text().nullable()();
+
+  DateTimeColumn get departureDate =>
+      dateTime().nullable()();
+
+  DateTimeColumn get arrivalDate =>
+      dateTime().nullable()();
+
+  /// ================= NOTES =================
+
+  TextColumn get notes =>
+      text().nullable()();
+
+  /// ================= STATUS FLOW =================
+
   TextColumn get status =>
       text().withDefault(
         const Constant('Purchase Confirmed'),
@@ -64,7 +145,8 @@ class Shipments extends Table {
         const Constant('owner'),
       )();
 
-  /// FLAGS
+  /// ================= FLAGS =================
+
   BoolColumn get slaughterDone =>
       boolean().withDefault(
         const Constant(false),
@@ -75,7 +157,20 @@ class Shipments extends Table {
         const Constant(false),
       )();
 
-  /// FIRESTORE SYNC
+  RealColumn get slaughterhouseCost =>
+      real().nullable()();
+
+  RealColumn get coldStorageCost =>
+      real().nullable()();
+
+  RealColumn get freightCost =>
+      real().nullable()();
+
+  RealColumn get airportHandlingCost =>
+      real().nullable()();
+
+  /// ================= FIRESTORE =================
+
   TextColumn get firestoreId =>
       text().nullable()();
 
@@ -89,7 +184,8 @@ class Shipments extends Table {
         currentDateAndTime,
       )();
 
-  /// ARCHIVE
+  /// ================= ARCHIVE =================
+
   BoolColumn get archived =>
       boolean().withDefault(
         const Constant(false),

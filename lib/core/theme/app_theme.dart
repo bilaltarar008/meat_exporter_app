@@ -2,42 +2,74 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTheme {
+
+  /// ================= LIGHT =================
+
+  static ThemeData lightTheme = ThemeData(
+
+    brightness: Brightness.light,
+
+    scaffoldBackgroundColor:
+    AppColors.lightBackground,
+
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.primary,
+      secondary: AppColors.accent,
+    ),
+
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      foregroundColor: AppColors.textPrimary,
+    ),
+
+    cardTheme: CardThemeData(
+      color: AppColors.lightCard,
+
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+    ),
+
+    elevatedButtonTheme:
+    ElevatedButtonThemeData(
+
+      style: ElevatedButton.styleFrom(
+
+        backgroundColor:
+        AppColors.primary,
+
+        foregroundColor:
+        Colors.white,
+
+        shape: RoundedRectangleBorder(
+          borderRadius:
+          BorderRadius.circular(14),
+        ),
+      ),
+    ),
+  );
+
+  /// ================= DARK =================
+
   static ThemeData darkTheme = ThemeData(
-    scaffoldBackgroundColor: AppColors.background,
+
+    brightness: Brightness.dark,
+
+    scaffoldBackgroundColor:
+    AppColors.darkBackground,
 
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.accent,
     ),
 
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      titleTextStyle: TextStyle(
-        color: AppColors.textPrimary,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-
     cardTheme: CardThemeData(
-      color: AppColors.card,
+      color: AppColors.darkCard,
+
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
-
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: AppColors.textPrimary),
-      bodyMedium: TextStyle(color: AppColors.textSecondary),
-    ),
-
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        borderRadius:
+        BorderRadius.circular(18),
       ),
     ),
   );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../shipment/create_shipment_screen.dart';
 import 'archived_shipments_screen.dart';
 import '../../core/database/database_provider.dart';
 
@@ -206,7 +206,18 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   size: 15,
                 ),
 
-                onPressed: () => _showCreateDialog(context),
+                onPressed: () {
+
+                  Navigator.push(
+
+                    context,
+
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const CreateShipmentScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -465,6 +476,68 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                     onSelected: (value) async {
 
                       if (value == 'archive') {
+
+                        final confirm =
+                        await showDialog<bool>(
+
+                          context: context,
+
+                          builder: (_) {
+
+                            return AlertDialog(
+
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(18),
+                              ),
+
+                              title: const Text(
+                                "Archive Shipment",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              content: Text(
+                                'Are you sure you want to archive "${s.title}" shipment?',
+                              ),
+
+                              actions: [
+
+                                TextButton(
+
+                                  onPressed: () {
+                                    Navigator.pop(context, false);
+                                  },
+
+                                  child: const Text(
+                                    "Cancel",
+                                  ),
+                                ),
+
+                                ElevatedButton(
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                  ),
+
+                                  onPressed: () {
+                                    Navigator.pop(context, true);
+                                  },
+
+                                  child: const Text(
+                                    "Archive",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirm != true) return;
 
                         await firestoreService.archiveShipment(
                           s.firestoreId!,
@@ -776,28 +849,77 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             shipmentCode:
             data['shipmentCode'],
 
-            origin: 'Pakistan',
+            origin:
+            data['originCountry'] ?? 'Pakistan',
 
-            destination: 'Dubai',
+            destination:
+            data['destinationCountry'] ?? 'Dubai',
+
+            slaughterhouse:
+            data['slaughterhouse'],
+
+            freightForwarder:
+            data['freightForwarder'],
+
+            airline:
+            data['airline'],
+
+            destinationWarehouse:
+            data['destinationWarehouse'],
+
+            supplier:
+            data['supplier'],
+
+            buyer:
+            data['buyer'],
+
+            animalType:
+            data['animalType'],
+
+            quantity:
+            (data['quantity'] ?? 0).toDouble(),
+
+            purchaseWeight:
+            (data['purchaseWeight'] ?? 0).toDouble(),
+
+            carcassWeight: 0,
+
+            netSaleWeight: 0,
 
             nextAction:
-            'Continue Processing',
+            data['nextAction'] ??
+                'Continue Processing',
 
-            paymentStatus: 'pending',
+            paymentStatus:
+            data['paymentStatus'] ?? 'pending',
 
             paymentDue: null,
 
+            paymentReceivedDate: null,
+
+            outstandingBalance: 0,
+
             purchaseCost:
-            (data['purchaseCost'] ?? 0)
-                .toDouble(),
+            (data['purchaseCost'] ?? 0).toDouble(),
 
             salePrice:
-            (data['salePrice'] ?? 0)
-                .toDouble(),
+            (data['salePrice'] ?? 0).toDouble(),
 
             weight:
-            (data['weight'] ?? 0)
-                .toDouble(),
+            (data['purchaseWeight'] ?? 0).toDouble(),
+
+            awbNumber:
+            data['awbNumber'],
+
+            flightNumber:
+            data['flightNumber'],
+
+            departureDate: null,
+
+            arrivalDate: null,
+
+            notes:
+            data['notes'],
 
             status:
             data['status'] ?? '',
@@ -862,6 +984,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             matchesFilter =
                 s.currentStage ==
                     'owner';
+          }else if (selectedFilter == 'profit') {
+
+            final profit =
+                s.salePrice - s.purchaseCost;
+
+            matchesFilter = profit > 0;
           }
 
           return matchesSearch &&
@@ -1284,240 +1412,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
 
       onTap: onTap,
-    );
-  }
-
-  /// ================= CREATE DIALOG =================
-
-  void _showCreateDialog(
-      BuildContext context,
-      ) {
-
-    final titleController =
-    TextEditingController();
-
-    final costController =
-    TextEditingController();
-
-    final saleController =
-    TextEditingController();
-
-    final weightController =
-    TextEditingController();
-
-
-    showDialog(
-
-      context: context,
-
-      barrierDismissible: false,
-
-      builder: (dialogContext) {
-
-        return StatefulBuilder(
-
-          builder: (context, setState) {
-
-            return AlertDialog(
-
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                BorderRadius.circular(20),
-              ),
-
-              title: const Text(
-                "Create Shipment",
-
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              content: SingleChildScrollView(
-
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-
-                  children: [
-
-                    TextField(
-                      controller: titleController,
-
-                      decoration: InputDecoration(
-                        labelText: "Title",
-
-                        border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-                      controller: costController,
-
-                      keyboardType:
-                      TextInputType.number,
-
-                      decoration: InputDecoration(
-                        labelText: "Amount Paid",
-
-                        border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-                      controller: saleController,
-
-                      keyboardType:
-                      TextInputType.number,
-
-                      decoration: InputDecoration(
-                        labelText: "Sale Price",
-
-                        border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    TextField(
-                      controller: weightController,
-
-                      keyboardType:
-                      TextInputType.number,
-
-                      decoration: InputDecoration(
-                        labelText: "Weight (kg)",
-
-                        border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              actions: [
-
-                /// CANCEL BUTTON
-                TextButton(
-
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-
-                  child: const Text(
-                    "Cancel",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-
-                /// CREATE BUTTON
-                ElevatedButton(
-
-                  style: ElevatedButton.styleFrom(
-
-                    backgroundColor: const Color(0xFF2563EB),
-
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 14,
-                    ),
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-
-                  onPressed: () async {
-
-                    FocusScope.of(dialogContext).unfocus();
-
-                    final cost =
-                        double.tryParse(costController.text) ?? 0;
-
-                    final sale =
-                        double.tryParse(saleController.text) ?? 0;
-
-                    final weight =
-                        double.tryParse(weightController.text) ?? 0;
-
-                    final shipmentCode =
-                    await db.generateShipmentCode();
-
-                    await db.createShipmentFull(
-
-                      title:
-                      titleController.text.trim(),
-
-                      cost: cost,
-
-                      sale: sale,
-
-                      weight: weight,
-                    );
-
-                    await firestoreService.createShipment(
-
-                      shipmentCode: shipmentCode,
-
-                      title:
-                      titleController.text.trim(),
-
-                      cost: cost,
-
-                      sale: sale,
-
-                      weight: weight,
-                    );
-
-                    if (dialogContext.mounted) {
-
-                      Navigator.pop(dialogContext);
-
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(
-
-                        const SnackBar(
-                          content: Text(
-                            "Shipment created successfully",
-                          ),
-                        ),
-                      );
-                    }
-                  },
-
-                  child: const Text(
-
-                    "Create Shipment",
-
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }

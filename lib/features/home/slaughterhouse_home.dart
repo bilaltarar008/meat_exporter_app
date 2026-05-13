@@ -110,34 +110,83 @@ class _SlaughterhouseHomeScreenState
                 shipmentCode:
                 data['shipmentCode'],
 
-                origin: 'Pakistan',
+                origin:
+                data['originCountry'] ?? 'Pakistan',
 
-                destination: 'Dubai',
+                destination:
+                data['destinationCountry'] ?? 'Dubai',
+
+                slaughterhouse:
+                data['slaughterhouse'],
+
+                freightForwarder:
+                data['freightForwarder'],
+
+                airline:
+                data['airline'],
+
+                destinationWarehouse:
+                data['destinationWarehouse'],
+
+                supplier:
+                data['supplier'],
+
+                buyer:
+                data['buyer'],
+
+                animalType:
+                data['animalType'],
+
+                quantity:
+                (data['quantity'] ?? 0).toDouble(),
+
+                purchaseWeight:
+                (data['purchaseWeight'] ?? 0).toDouble(),
+
+                carcassWeight: 0,
+
+                netSaleWeight: 0,
 
                 nextAction:
-                'Move To Warehouse',
+                data['nextAction'] ??
+                    'Continue Processing',
 
-                paymentStatus: 'pending',
+                paymentStatus:
+                data['paymentStatus'] ?? 'pending',
 
                 paymentDue: null,
 
+                paymentReceivedDate: null,
+
+                outstandingBalance: 0,
+
                 purchaseCost:
-                (data['purchaseCost'] ?? 0)
-                    .toDouble(),
+                (data['purchaseCost'] ?? 0).toDouble(),
 
                 salePrice:
-                (data['salePrice'] ?? 0)
-                    .toDouble(),
+                (data['salePrice'] ?? 0).toDouble(),
 
                 weight:
-                (data['weight'] ?? 0)
-                    .toDouble(),
+                (data['purchaseWeight'] ?? 0).toDouble(),
+
+                awbNumber:
+                data['awbNumber'],
+
+                flightNumber:
+                data['flightNumber'],
+
+                departureDate: null,
+
+                arrivalDate: null,
+
+                notes:
+                data['notes'],
 
                 status:
                 data['status'] ?? '',
 
                 currentStage:
-                data['currentStage'] ?? '',
+                data['currentStage'] ?? 'owner',
 
                 slaughterDone: false,
 

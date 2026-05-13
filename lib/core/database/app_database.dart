@@ -19,7 +19,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration =>
@@ -67,6 +67,98 @@ class AppDatabase extends _$AppDatabase {
               shipments.updatedAt,
             );
           }
+          if (from < 6) {
+
+            await m.addColumn(
+              shipments,
+              shipments.slaughterhouse,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.freightForwarder,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.airline,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.destinationWarehouse,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.supplier,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.buyer,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.animalType,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.quantity,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.purchaseWeight,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.carcassWeight,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.netSaleWeight,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.paymentReceivedDate,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.outstandingBalance,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.awbNumber,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.flightNumber,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.departureDate,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.arrivalDate,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.notes,
+            );
+          }
         },
       );
 
@@ -76,11 +168,31 @@ class AppDatabase extends _$AppDatabase {
 
   Future<String> generateShipmentCode() async {
 
-    final count =
+    final allShipments =
     await select(shipments).get();
 
-    final number =
-    (count.length + 1)
+    int highestNumber = 0;
+
+    for (final shipment in allShipments) {
+
+      final code = shipment.shipmentCode;
+
+      if (code == null) continue;
+
+      final parts = code.split('-');
+
+      if (parts.length != 2) continue;
+
+      final number =
+          int.tryParse(parts[1]) ?? 0;
+
+      if (number > highestNumber) {
+        highestNumber = number;
+      }
+    }
+
+    final nextNumber =
+    (highestNumber + 1)
         .toString()
         .padLeft(3, '0');
 
@@ -92,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
     final month =
     now.month.toString().padLeft(2, '0');
 
-    return "$day$month-$number";
+    return "$day$month-$nextNumber";
   }
 
   /// =====================================================
