@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../shipment/slaughterhouse_processing_screen.dart';
 import '../../core/database/app_database.dart';
 import '../../core/services/firestore_provider.dart';
 
@@ -143,9 +143,11 @@ class _SlaughterhouseHomeScreenState
                 purchaseWeight:
                 (data['purchaseWeight'] ?? 0).toDouble(),
 
-                carcassWeight: 0,
+                carcassWeight:
+                (data['carcassWeight'] ?? 0).toDouble(),
 
-                netSaleWeight: 0,
+                netSaleWeight:
+                (data['netSaleWeight'] ?? 0).toDouble(),
 
                 nextAction:
                 data['nextAction'] ??
@@ -165,6 +167,19 @@ class _SlaughterhouseHomeScreenState
 
                 salePrice:
                 (data['salePrice'] ?? 0).toDouble(),
+
+                slaughterhouseCost:
+                (data['slaughterhouseCost'] ?? 0).toDouble(),
+
+                coldStorageCost:
+                (data['coldStorageCost'] ?? 0).toDouble(),
+
+                freightCost:
+                (data['freightCost'] ?? 0).toDouble(),
+
+                airportHandlingCost:
+                (data['airportHandlingCost'] ?? 0).toDouble(),
+
 
                 weight:
                 (data['purchaseWeight'] ?? 0).toDouble(),
@@ -431,13 +446,12 @@ class _SlaughterhouseHomeScreenState
                     const SizedBox(height: 4),
 
                     Text(
+                      "${s.origin} → ${s.destination}",
 
-                      s.title,
-
-                      style:
-                      const TextStyle(
-                        color:
-                        Color(0xFF64748B),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -523,11 +537,19 @@ class _SlaughterhouseHomeScreenState
 
             child: ElevatedButton(
 
-              onPressed: () async {
+              onPressed: () {
 
-                await firestoreService
-                    .moveToWarehouse(
-                  s.firestoreId!,
+                Navigator.push(
+
+                  context,
+
+                  MaterialPageRoute(
+
+                    builder: (_) =>
+                        SlaughterhouseProcessingScreen(
+                          shipmentId: s.firestoreId!,
+                        ),
+                  ),
                 );
               },
 

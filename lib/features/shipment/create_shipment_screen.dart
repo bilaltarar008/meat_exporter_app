@@ -1,603 +1,871 @@
-import 'package:flutter/material.dart';
-import '../../core/services/firestore_provider.dart';
-import '../../core/database/database_provider.dart';
+  import 'package:flutter/material.dart';
+  import '../../core/services/firestore_provider.dart';
+  import '../../core/database/database_provider.dart';
+  import 'package:country_picker/country_picker.dart';
 
-class CreateShipmentScreen extends StatefulWidget {
 
-  const CreateShipmentScreen({super.key});
+  class CreateShipmentScreen extends StatefulWidget {
 
-  @override
-  State<CreateShipmentScreen> createState() =>
-      _CreateShipmentScreenState(
+    const CreateShipmentScreen({super.key});
 
-      );
-}
+    @override
+    State<CreateShipmentScreen> createState() =>
+        _CreateShipmentScreenState(
 
-class _CreateShipmentScreenState
-
-    extends State<CreateShipmentScreen> {
-
-  int currentStep = 0;
-  final steps = [
-
-    "Route",
-    "Operations",
-    "Purchase",
-    "Sales",
-    "Flight",
-    "Notes",
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _generateCode();
+        );
   }
 
-  /// ================= CONTROLLERS =================
-  String shipmentCode = '';
-  final originCountryController =
-  TextEditingController();
+  class _CreateShipmentScreenState
 
-  final originCityController =
-  TextEditingController();
+      extends State<CreateShipmentScreen> {
 
-  final destinationCountryController =
-  TextEditingController();
+    String originCountry = '';
+    String originCity = '';
 
-  final destinationCityController =
-  TextEditingController();
+    String destinationCountry = '';
+    String destinationCity = '';
+    bool isCreatingShipment = false;
+    int currentStep = 0;
+    final steps = [
 
-  final slaughterhouseController =
-  TextEditingController();
+      "Route",
+      "Operations",
+      "Purchase",
+      "Flight",
+      "Notes",
+    ];
 
-  final warehouseController =
-  TextEditingController();
+    @override
+    void initState() {
+      super.initState();
+      _generateCode();
+    }
 
-  final supplierController =
-  TextEditingController();
+    /// ================= CONTROLLERS =================
+    String shipmentCode = '';
 
-  final buyerController =
-  TextEditingController();
 
-  final animalTypeController =
-  TextEditingController();
+    final slaughterhouseController =
+    TextEditingController();
 
-  final quantityController =
-  TextEditingController();
+    final warehouseController =
+    TextEditingController();
 
-  final purchaseWeightController =
-  TextEditingController();
+    final supplierController =
+    TextEditingController();
 
-  final purchaseCostController =
-  TextEditingController();
+    final animalTypeController =
+    TextEditingController();
 
-  final salePriceController =
-  TextEditingController();
+    final quantityController =
+    TextEditingController();
 
-  final freightForwarderController =
-  TextEditingController();
+    final purchaseWeightController =
+    TextEditingController();
 
-  final airlineController =
-  TextEditingController();
+    final purchaseCostController =
+    TextEditingController();
 
-  final awbController =
-  TextEditingController();
+    final freightForwarderController =
+    TextEditingController();
 
-  final flightNumberController =
-  TextEditingController();
+    final airlineController =
+    TextEditingController();
 
-  final notesController =
-  TextEditingController();
+    final awbController =
+    TextEditingController();
 
-  @override
-  Widget build(BuildContext context) {
+    final flightNumberController =
+    TextEditingController();
 
-    return Scaffold(
+    final notesController =
+    TextEditingController();
 
-      backgroundColor:
-      const Color(0xFFF3F4F6),
+    @override
+    Widget build(BuildContext context) {
 
-      appBar: AppBar(
+      return Scaffold(
 
-        backgroundColor: Colors.white,
+        backgroundColor:
+        const Color(0xFFF3F4F6),
 
-        title: const Text(
-          "Create Shipment",
+        appBar: AppBar(
+
+          backgroundColor: Colors.white,
+
+          title: const Text(
+            "Create Shipment",
+          ),
         ),
-      ),
 
-      body: SingleChildScrollView(
+        body: SingleChildScrollView(
 
-        padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
 
-        child: Column(
+          child: Column(
 
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
 
-          children: [
+            children: [
 
-            /// HEADER
+              /// HEADER
 
-            Row(
+              Row(
 
-              mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
+                mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
 
-              children: [
+                children: [
 
-                Column(
+                  Column(
 
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
 
-                  children: [
+                    children: [
 
-                    const Text(
+                      const Text(
 
-                      "Create Shipment",
+                        "Create Shipment",
 
-                      style: TextStyle(
+                        style: TextStyle(
 
-                        fontSize: 26,
+                          fontSize: 26,
+
+                          fontWeight:
+                          FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+
+                        "Step ${currentStep + 1} of ${steps.length}",
+
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Container(
+
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+
+                    decoration: BoxDecoration(
+
+                      color:
+                      const Color(0xFF2563EB)
+                          .withValues(alpha: 0.1),
+
+                      borderRadius:
+                      BorderRadius.circular(30),
+                    ),
+
+                    child: Text(
+
+                      steps[currentStep],
+
+                      style: const TextStyle(
+
+                        color: Color(0xFF2563EB),
 
                         fontWeight:
                         FontWeight.bold,
                       ),
                     ),
+                  ),
+                ],
+              ),
 
-                    const SizedBox(height: 4),
+              const SizedBox(height: 24),
 
-                    Text(
+              _buildStep(),
 
-                      "Step ${currentStep + 1} of ${steps.length}",
+              const SizedBox(height: 30),
 
-                      style: const TextStyle(
-                        color: Colors.grey,
+              /// NAVIGATION
+
+              Row(
+
+                children: [
+
+                  /// BACK
+
+                  if (currentStep > 0)
+
+                    Expanded(
+
+                      child: OutlinedButton(
+
+                        onPressed: () {
+
+                          setState(() {
+                            currentStep--;
+                          });
+                        },
+
+                        child: const Text("Back"),
                       ),
                     ),
-                  ],
-                ),
 
-                Container(
+                  if (currentStep > 0)
+                    const SizedBox(width: 12),
 
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
+                  /// NEXT / CREATE
+                  Expanded(
 
-                  decoration: BoxDecoration(
+                    child: ElevatedButton(
 
-                    color:
-                    const Color(0xFF2563EB)
-                        .withOpacity(0.1),
+                      style: ElevatedButton.styleFrom(
 
-                    borderRadius:
-                    BorderRadius.circular(30),
-                  ),
+                        backgroundColor:
+                        const Color(0xFF2563EB),
 
-                  child: Text(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
 
-                    steps[currentStep],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
 
-                    style: const TextStyle(
+                      onPressed: isCreatingShipment
+                          ? null
+                          : () async {
 
-                      color: Color(0xFF2563EB),
+                        if (!_validateStep()) return;
 
-                      fontWeight:
-                      FontWeight.bold,
+                        /// NEXT STEP
+                        if (currentStep < steps.length - 1) {
+
+                          setState(() {
+                            currentStep++;
+                          });
+
+                          return;
+                        }
+
+                        /// CREATE SHIPMENT
+                        if (shipmentCode.isEmpty) {
+
+                          _showError(
+                            "Shipment code not generated yet",
+                          );
+
+                          return;
+                        }
+
+                        setState(() {
+                          isCreatingShipment = true;
+                        });
+
+                        try {
+
+                          await firestoreService.createShipment(
+
+                            shipmentCode: shipmentCode,
+
+                            originCountry: originCountry,
+
+                            originCity: originCity,
+
+                            destinationCountry: destinationCountry,
+
+                            destinationCity: destinationCity,
+
+                            slaughterhouse:
+                            slaughterhouseController.text.trim(),
+
+                            destinationWarehouse:
+                            warehouseController.text.trim(),
+
+                            supplier:
+                            supplierController.text.trim(),
+
+                            animalType:
+                            animalTypeController.text.trim(),
+
+                            quantity:
+                            double.tryParse(
+                              quantityController.text,
+                            ) ?? 0,
+
+                            purchaseWeight:
+                            double.tryParse(
+                              purchaseWeightController.text,
+                            ) ?? 0,
+
+                            purchaseCost:
+                            double.tryParse(
+                              purchaseCostController.text,
+                            ) ?? 0,
+
+                            freightForwarder:
+                            freightForwarderController.text.trim(),
+
+                            airline:
+                            airlineController.text.trim(),
+
+                            awbNumber:
+                            awbController.text.trim(),
+
+                            flightNumber:
+                            flightNumberController.text.trim(),
+
+                            notes:
+                            notesController.text.trim(),
+                          );
+
+                          if (!mounted) return;
+
+                          if (!context.mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+
+                            const SnackBar(
+
+                              backgroundColor: Colors.green,
+
+                              content: Text(
+                                "Shipment created successfully",
+                              ),
+                            ),
+                          );
+
+                          Navigator.pop(context);
+
+                        } catch (e) {
+
+                          _showError(
+                            "Failed to create shipment: $e",
+                          );
+
+                        } finally {
+
+                          if (mounted) {
+
+                            setState(() {
+                              isCreatingShipment = false;
+                            });
+                          }
+                        }
+                      },
+
+                      child: isCreatingShipment
+
+                          ? const SizedBox(
+
+                        height: 22,
+                        width: 22,
+
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+
+                          : Text(
+
+                        currentStep ==
+                            steps.length - 1
+
+                            ? "Create Shipment"
+                            : "Next",
+
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Future<void> _generateCode() async {
+
+      final snapshot = await firestoreService
+          .watchShipments()
+          .first;
+
+      final nextNumber =
+      (snapshot.length + 1)
+          .toString()
+          .padLeft(3, '0');
+
+      final now = DateTime.now();
+
+      final day =
+      now.day.toString().padLeft(2, '0');
+
+      final month =
+      now.month.toString().padLeft(2, '0');
+
+      final code =
+          "$day$month-$nextNumber";
+
+      setState(() {
+        shipmentCode = code;
+      });
+    }
+
+    void _showError(String message) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(message),
+        ),
+      );
+    }
+
+    bool _validateStep() {
+
+      /// STEP 0 — ROUTE
+      if (currentStep == 0) {
+
+        if (originCountry.isEmpty ||
+            originCity.isEmpty ||
+            destinationCountry.isEmpty ||
+            destinationCity.isEmpty) {
+
+          _showError(
+            "Origin and destination are required",
+          );
+
+          return false;
+        }
+      }
+
+      /// STEP 1 — OPERATIONS
+      if (currentStep == 1) {
+
+        if (slaughterhouseController.text.trim().isEmpty ||
+            warehouseController.text.trim().isEmpty) {
+
+          _showError(
+            "Operations information is required",
+          );
+
+          return false;
+        }
+      }
+
+      /// STEP 2 — PURCHASE
+      if (currentStep == 2) {
+
+        if (supplierController.text.trim().isEmpty) {
+
+          _showError(
+            "Supplier name is required",
+          );
+
+          return false;
+        }
+
+        final quantity =
+        double.tryParse(
+          quantityController.text,
+        );
+
+        final weight =
+        double.tryParse(
+          purchaseWeightController.text,
+        );
+
+        final cost =
+        double.tryParse(
+          purchaseCostController.text,
+        );
+
+        if (quantity == null || quantity <= 0) {
+
+          _showError(
+            "Enter valid quantity",
+          );
+
+          return false;
+        }
+
+        if (weight == null || weight <= 0) {
+
+          _showError(
+            "Enter valid purchase weight",
+          );
+
+          return false;
+        }
+
+        if (cost == null || cost <= 0) {
+
+          _showError(
+            "Enter valid purchase cost",
+          );
+
+          return false;
+        }
+      }
+
+      /// STEP 3 — FLIGHT
+      if (currentStep == 3) {
+
+        if (freightForwarderController.text.trim().isEmpty ||
+            airlineController.text.trim().isEmpty ||
+            awbController.text.trim().isEmpty ||
+            flightNumberController.text.trim().isEmpty) {
+
+          _showError(
+            "Flight information is required",
+          );
+
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    Widget _buildStep() {
+
+      switch (currentStep) {
+
+        case 0:
+
+          return Container(
+
+            padding: const EdgeInsets.all(18),
+
+            decoration: BoxDecoration(
+
+              color: Colors.white,
+
+              borderRadius: BorderRadius.circular(20),
             ),
 
-            const SizedBox(height: 24),
+            child: Column(
 
-            _buildStep(),
-
-            const SizedBox(height: 30),
-
-            /// NAVIGATION
-
-            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
 
               children: [
 
-                /// BACK
+                const Text(
 
-                if (currentStep > 0)
+                  "Shipment Route",
 
-                  Expanded(
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-                    child: OutlinedButton(
+                const SizedBox(height: 20),
 
-                      onPressed: () {
+                /// ORIGIN COUNTRY
+
+                const Text(
+                  "Origin Country",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                InkWell(
+
+                  onTap: () {
+
+                    showCountryPicker(
+
+                      context: context,
+
+                      showPhoneCode: false,
+
+                      onSelect: (Country country) {
 
                         setState(() {
-                          currentStep--;
+                          originCountry = country.name;
                         });
                       },
+                    );
+                  },
 
-                      child: const Text("Back"),
-                    ),
+                  child: _routeSelector(
+
+                    originCountry.isEmpty
+                        ? "Select Origin Country"
+                        : originCountry,
                   ),
+                ),
 
-                if (currentStep > 0)
-                  const SizedBox(width: 12),
+                const SizedBox(height: 14),
 
-                /// NEXT / CREATE
+                _field(
 
-                Expanded(
+                  TextEditingController(text: originCity),
 
-                  child: ElevatedButton(
+                  "Origin City",
 
-                    style:
-                    ElevatedButton.styleFrom(
+                  onChanged: (value) {
+                    originCity = value;
+                  },
+                ),
 
-                      backgroundColor:
-                      const Color(0xFF2563EB),
+                const SizedBox(height: 24),
 
-                      padding:
-                      const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
-                    ),
+                /// DESTINATION COUNTRY
 
-                    onPressed: () async {
+                const Text(
+                  "Destination Country",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
 
-                      /// NEXT STEP
+                const SizedBox(height: 8),
 
-                      if (currentStep <
-                          steps.length - 1) {
+                InkWell(
+
+                  onTap: () {
+
+                    showCountryPicker(
+
+                      context: context,
+
+                      showPhoneCode: false,
+
+                      onSelect: (Country country) {
 
                         setState(() {
-                          currentStep++;
+                          destinationCountry = country.name;
                         });
+                      },
+                    );
+                  },
 
-                        return;
-                      }
+                  child: _routeSelector(
 
-                      /// CREATE SHIPMENT
-
-                      if (shipmentCode.isEmpty) return;
-
-                      await firestoreService
-                          .createShipment(
-
-                        shipmentCode: shipmentCode,
-
-                        originCountry:
-                        originCountryController.text.trim(),
-
-                        originCity:
-                        originCityController.text.trim(),
-
-                        destinationCountry:
-                        destinationCountryController.text.trim(),
-
-                        destinationCity:
-                        destinationCityController.text.trim(),
-
-                        slaughterhouse:
-                        slaughterhouseController.text.trim(),
-
-                        destinationWarehouse:
-                        warehouseController.text.trim(),
-
-                        supplier:
-                        supplierController.text.trim(),
-
-                        buyer:
-                        buyerController.text.trim(),
-
-                        animalType:
-                        animalTypeController.text.trim(),
-
-                        quantity:
-                        double.tryParse(
-                          quantityController.text,
-                        ) ?? 0,
-
-                        purchaseWeight:
-                        double.tryParse(
-                          purchaseWeightController.text,
-                        ) ?? 0,
-
-                        purchaseCost:
-                        double.tryParse(
-                          purchaseCostController.text,
-                        ) ?? 0,
-
-                        salePrice:
-                        double.tryParse(
-                          salePriceController.text,
-                        ) ?? 0,
-
-                        freightForwarder:
-                        freightForwarderController.text.trim(),
-
-                        airline:
-                        airlineController.text.trim(),
-
-                        awbNumber:
-                        awbController.text.trim(),
-
-                        flightNumber:
-                        flightNumberController.text.trim(),
-
-                        notes:
-                        notesController.text.trim(),
-                      );
-
-                      if (context.mounted) {
-
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-
-                          const SnackBar(
-                            content: Text(
-                              "Shipment created successfully",
-                            ),
-                          ),
-                        );
-
-                        Navigator.pop(context);
-                      }
-                    },
-
-                    child: Text(
-
-                      currentStep ==
-                          steps.length - 1
-
-                          ? "Create Shipment"
-                          : "Next",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    destinationCountry.isEmpty
+                        ? "Select Destination Country"
+                        : destinationCountry,
                   ),
+                ),
+
+                const SizedBox(height: 14),
+
+                _field(
+
+                  TextEditingController(text: destinationCity),
+
+                  "Destination City",
+
+                  onChanged: (value) {
+                    destinationCity = value;
+                  },
                 ),
               ],
             ),
+          );
 
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
+        case 1:
 
-  Future<void> _generateCode() async {
+          return Column(
 
-    final snapshot = await firestoreService
-        .watchShipments()
-        .first;
+            children: [
 
-    final nextNumber =
-    (snapshot.length + 1)
-        .toString()
-        .padLeft(3, '0');
+              _field(
+                slaughterhouseController,
+                "Slaughterhouse",
+              ),
 
-    final now = DateTime.now();
+              _field(
+                warehouseController,
+                "Destination Warehouse",
+              ),
+            ],
+          );
 
-    final day =
-    now.day.toString().padLeft(2, '0');
+        case 2:
 
-    final month =
-    now.month.toString().padLeft(2, '0');
+          return Column(
 
-    final code =
-        "$day$month-$nextNumber";
+            children: [
 
-    setState(() {
-      shipmentCode = code;
-    });
-  }
+              _field(
+                supplierController,
+                "Supplier Name",
+              ),
 
-  Widget _buildStep() {
+              _field(
+                animalTypeController,
+                "Animal Type",
+              ),
 
-    switch (currentStep) {
+              _field(
+                quantityController,
+                "Quantity",
+              ),
 
-      case 0:
+              _field(
+                purchaseWeightController,
+                "Purchase Weight",
+              ),
 
-        return Column(
+              _field(
+                purchaseCostController,
+                "Purchase Cost",
+              ),
+            ],
+          );
 
-          children: [
+        case 3:
 
-            _field(
-              originCountryController,
-              "Origin Country",
-            ),
+          return Column(
 
-            _field(
-              originCityController,
-              "Origin City",
-            ),
+            children: [
 
-            _field(
-              destinationCountryController,
-              "Destination Country",
-            ),
+              _field(
+                freightForwarderController,
+                "Freight Forwarder",
+              ),
 
-            _field(
-              destinationCityController,
-              "Destination City",
-            ),
-          ],
-        );
+              _field(
+                airlineController,
+                "Airline",
+              ),
 
-      case 1:
+              _field(
+                awbController,
+                "AWB Number",
+              ),
 
-        return Column(
+              _field(
+                flightNumberController,
+                "Flight Number",
+              ),
+            ],
+          );
 
-          children: [
+        default:
 
-            _field(
-              slaughterhouseController,
-              "Slaughterhouse",
-            ),
+          return Column(
 
-            _field(
-              warehouseController,
-              "Destination Warehouse",
-            ),
-          ],
-        );
+            children: [
 
-      case 2:
-
-        return Column(
-
-          children: [
-
-            _field(
-              supplierController,
-              "Supplier Name",
-            ),
-
-            _field(
-              animalTypeController,
-              "Animal Type",
-            ),
-
-            _field(
-              quantityController,
-              "Quantity",
-            ),
-
-            _field(
-              purchaseWeightController,
-              "Purchase Weight",
-            ),
-
-            _field(
-              purchaseCostController,
-              "Purchase Cost",
-            ),
-          ],
-        );
-
-      case 3:
-
-        return Column(
-
-          children: [
-
-            _field(
-              buyerController,
-              "Buyer Name",
-            ),
-
-            _field(
-              salePriceController,
-              "Sale Price",
-            ),
-          ],
-        );
-
-      case 4:
-
-        return Column(
-
-          children: [
-
-            _field(
-              freightForwarderController,
-              "Freight Forwarder",
-            ),
-
-            _field(
-              airlineController,
-              "Airline",
-            ),
-
-            _field(
-              awbController,
-              "AWB Number",
-            ),
-
-            _field(
-              flightNumberController,
-              "Flight Number",
-            ),
-          ],
-        );
-
-      default:
-
-        return Column(
-
-          children: [
-
-            _field(
-              notesController,
-              "Operational Notes",
-              maxLines: 6,
-            ),
-          ],
-        );
+              _field(
+                notesController,
+                "Operational Notes",
+                maxLines: 6,
+              ),
+            ],
+          );
+      }
     }
-  }
 
-  /// ================= HELPERS =================
 
-  Widget _sectionTitle(String title) {
+    Widget _field(
+        TextEditingController controller,
+        String label, {
+          int maxLines = 1,
+          Function(String)? onChanged,
+        }) {
 
-    return Padding(
+      return Padding(
 
-      padding:
-      const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.only(bottom: 14),
 
-      child: Text(
+        child: TextField(
 
-        title,
+          controller: controller,
 
-        style: const TextStyle(
+          maxLines: maxLines,
 
-          fontSize: 20,
+          onChanged: onChanged,
 
-          fontWeight:
-          FontWeight.bold,
-        ),
-      ),
-    );
-  }
+          decoration: InputDecoration(
 
-  Widget _field(
-      TextEditingController controller,
-      String label, {
-        int maxLines = 1,
-      }) {
+            labelText: label,
 
-    return Padding(
+            filled: true,
 
-      padding:
-      const EdgeInsets.only(bottom: 14),
+            fillColor: Colors.white,
 
-      child: TextField(
+            border: OutlineInputBorder(
 
-        controller: controller,
+              borderRadius:
+              BorderRadius.circular(16),
 
-        maxLines: maxLines,
-
-        decoration: InputDecoration(
-
-          labelText: label,
-
-          filled: true,
-
-          fillColor: Colors.white,
-
-          border: OutlineInputBorder(
-
-            borderRadius:
-            BorderRadius.circular(16),
-
-            borderSide: BorderSide.none,
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
+
+    Widget _routeSelector(String text) {
+
+      return Container(
+
+        width: double.infinity,
+
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+
+        decoration: BoxDecoration(
+
+          color: const Color(0xFFF8FAFC),
+
+          borderRadius: BorderRadius.circular(14),
+
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ),
+        ),
+
+        child: Row(
+
+          children: [
+
+            Expanded(
+
+              child: Text(
+
+                text,
+
+                style: TextStyle(
+
+                  fontSize: 15,
+
+                  color: text.contains("Select")
+                      ? Colors.grey
+                      : Colors.black,
+                ),
+              ),
+            ),
+
+            const Icon(
+              Icons.keyboard_arrow_down,
+            ),
+          ],
+        ),
+      );
+    }
   }
-}

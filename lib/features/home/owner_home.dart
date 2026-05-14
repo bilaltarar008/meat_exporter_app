@@ -389,7 +389,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   /// ================= SHIPMENT CARD =================
 
-  Widget _shipmentCard(Shipment s) {
+  Widget _shipmentCard(
+      Shipment s,
+      Map<String, dynamic> data,
+      ) {
 
     return InkWell(
 
@@ -398,11 +401,60 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       onTap: () {
 
         Navigator.push(
+
           context,
 
           MaterialPageRoute(
-            builder: (_) =>
-                ShipmentDetailScreen(shipment: s),
+
+            builder: (_) => ShipmentDetailScreen(
+
+              shipment: {
+
+                'shipmentCode': s.shipmentCode,
+
+                'status': s.status,
+
+                'origin': s.origin,
+
+                'destination': s.destination,
+
+                'nextAction': s.nextAction,
+
+                'purchaseCost': s.purchaseCost,
+
+                'salePrice': s.salePrice,
+
+                'weight': s.weight,
+
+                'paymentStatus': s.paymentStatus,
+
+                'purchaseWeight': s.purchaseWeight,
+
+                'carcassWeight': s.carcassWeight,
+
+                'netSaleWeight': s.netSaleWeight,
+
+                'slaughterhouseCost':
+                data['slaughterhouseCost'] ?? 0,
+
+                'coldStorageCost':
+                data['coldStorageCost'] ?? 0,
+
+                'freightCost':
+                data['freightCost'] ?? 0,
+
+                'airportHandlingCost':
+                data['airportHandlingCost'] ?? 0,
+
+                'notes': s.notes,
+
+                'timeline': data['timeline'] ?? [],
+
+                'expenses': data['expenses'] ?? [],
+
+                'activityLogs': data['activityLogs'] ?? [],
+              },
+            ),
           ),
         );
       },
@@ -455,10 +507,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         const SizedBox(height: 4),
 
                         Text(
-                          s.title,
+                          "${s.origin} → ${s.destination}",
+
                           style: const TextStyle(
                             color: Color(0xFF6B7280),
                             fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -882,9 +936,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             purchaseWeight:
             (data['purchaseWeight'] ?? 0).toDouble(),
 
-            carcassWeight: 0,
+            carcassWeight:
+            (data['carcassWeight'] ?? 0).toDouble(),
 
-            netSaleWeight: 0,
+            netSaleWeight:
+            (data['netSaleWeight'] ?? 0).toDouble(),
 
             nextAction:
             data['nextAction'] ??
@@ -904,6 +960,19 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
             salePrice:
             (data['salePrice'] ?? 0).toDouble(),
+
+            slaughterhouseCost:
+            (data['slaughterhouseCost'] ?? 0).toDouble(),
+
+            coldStorageCost:
+            (data['coldStorageCost'] ?? 0).toDouble(),
+
+            freightCost:
+            (data['freightCost'] ?? 0).toDouble(),
+
+            airportHandlingCost:
+            (data['airportHandlingCost'] ?? 0).toDouble(),
+
 
             weight:
             (data['purchaseWeight'] ?? 0).toDouble(),
@@ -1014,6 +1083,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
             return _shipmentCard(
               shipments[i],
+              firestoreShipments[i],
             );
           },
         );

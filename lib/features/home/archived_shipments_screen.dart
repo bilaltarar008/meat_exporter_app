@@ -91,9 +91,11 @@ class ArchivedShipmentsScreen extends StatelessWidget {
               purchaseWeight:
               (data['purchaseWeight'] ?? 0).toDouble(),
 
-              carcassWeight: 0,
+              carcassWeight:
+              (data['carcassWeight'] ?? 0).toDouble(),
 
-              netSaleWeight: 0,
+              netSaleWeight:
+              (data['netSaleWeight'] ?? 0).toDouble(),
 
               nextAction:
               data['nextAction'] ??
@@ -113,6 +115,18 @@ class ArchivedShipmentsScreen extends StatelessWidget {
 
               salePrice:
               (data['salePrice'] ?? 0).toDouble(),
+
+              slaughterhouseCost:
+              (data['slaughterhouseCost'] ?? 0).toDouble(),
+
+              coldStorageCost:
+              (data['coldStorageCost'] ?? 0).toDouble(),
+
+              freightCost:
+              (data['freightCost'] ?? 0).toDouble(),
+
+              airportHandlingCost:
+              (data['airportHandlingCost'] ?? 0).toDouble(),
 
               weight:
               (data['purchaseWeight'] ?? 0).toDouble(),

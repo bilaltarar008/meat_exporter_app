@@ -60,6 +60,8 @@ class Shipments extends Table {
         const Constant(0),
       )();
 
+
+
   /// ================= WEIGHTS =================
 
   RealColumn get carcassWeight =>
@@ -158,16 +160,24 @@ class Shipments extends Table {
       )();
 
   RealColumn get slaughterhouseCost =>
-      real().nullable()();
+      real().withDefault(
+        const Constant(0),
+      )();
 
   RealColumn get coldStorageCost =>
-      real().nullable()();
+      real().withDefault(
+        const Constant(0),
+      )();
 
   RealColumn get freightCost =>
-      real().nullable()();
+      real().withDefault(
+        const Constant(0),
+      )();
 
   RealColumn get airportHandlingCost =>
-      real().nullable()();
+      real().withDefault(
+        const Constant(0),
+      )();
 
   /// ================= FIRESTORE =================
 

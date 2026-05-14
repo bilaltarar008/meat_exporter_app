@@ -244,26 +244,34 @@ class $ShipmentsTable extends Shipments
       const VerificationMeta('slaughterhouseCost');
   @override
   late final GeneratedColumn<double> slaughterhouseCost =
-      GeneratedColumn<double>('slaughterhouse_cost', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
+      GeneratedColumn<double>('slaughterhouse_cost', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
   static const VerificationMeta _coldStorageCostMeta =
       const VerificationMeta('coldStorageCost');
   @override
   late final GeneratedColumn<double> coldStorageCost = GeneratedColumn<double>(
-      'cold_storage_cost', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+      'cold_storage_cost', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _freightCostMeta =
       const VerificationMeta('freightCost');
   @override
   late final GeneratedColumn<double> freightCost = GeneratedColumn<double>(
-      'freight_cost', aliasedName, true,
-      type: DriftSqlType.double, requiredDuringInsert: false);
+      'freight_cost', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _airportHandlingCostMeta =
       const VerificationMeta('airportHandlingCost');
   @override
   late final GeneratedColumn<double> airportHandlingCost =
-      GeneratedColumn<double>('airport_handling_cost', aliasedName, true,
-          type: DriftSqlType.double, requiredDuringInsert: false);
+      GeneratedColumn<double>('airport_handling_cost', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
   static const VerificationMeta _firestoreIdMeta =
       const VerificationMeta('firestoreId');
   @override
@@ -645,13 +653,14 @@ class $ShipmentsTable extends Shipments
       warehouseDone: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}warehouse_done'])!,
       slaughterhouseCost: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}slaughterhouse_cost']),
+          DriftSqlType.double, data['${effectivePrefix}slaughterhouse_cost'])!,
       coldStorageCost: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}cold_storage_cost']),
+          DriftSqlType.double, data['${effectivePrefix}cold_storage_cost'])!,
       freightCost: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}freight_cost']),
+          .read(DriftSqlType.double, data['${effectivePrefix}freight_cost'])!,
       airportHandlingCost: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}airport_handling_cost']),
+          DriftSqlType.double,
+          data['${effectivePrefix}airport_handling_cost'])!,
       firestoreId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}firestore_id']),
       synced: attachedDatabase.typeMapping
@@ -728,10 +737,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   /// ================= FLAGS =================
   final bool slaughterDone;
   final bool warehouseDone;
-  final double? slaughterhouseCost;
-  final double? coldStorageCost;
-  final double? freightCost;
-  final double? airportHandlingCost;
+  final double slaughterhouseCost;
+  final double coldStorageCost;
+  final double freightCost;
+  final double airportHandlingCost;
 
   /// ================= FIRESTORE =================
   final String? firestoreId;
@@ -774,10 +783,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       required this.currentStage,
       required this.slaughterDone,
       required this.warehouseDone,
-      this.slaughterhouseCost,
-      this.coldStorageCost,
-      this.freightCost,
-      this.airportHandlingCost,
+      required this.slaughterhouseCost,
+      required this.coldStorageCost,
+      required this.freightCost,
+      required this.airportHandlingCost,
       this.firestoreId,
       required this.synced,
       required this.updatedAt,
@@ -848,18 +857,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
     map['current_stage'] = Variable<String>(currentStage);
     map['slaughter_done'] = Variable<bool>(slaughterDone);
     map['warehouse_done'] = Variable<bool>(warehouseDone);
-    if (!nullToAbsent || slaughterhouseCost != null) {
-      map['slaughterhouse_cost'] = Variable<double>(slaughterhouseCost);
-    }
-    if (!nullToAbsent || coldStorageCost != null) {
-      map['cold_storage_cost'] = Variable<double>(coldStorageCost);
-    }
-    if (!nullToAbsent || freightCost != null) {
-      map['freight_cost'] = Variable<double>(freightCost);
-    }
-    if (!nullToAbsent || airportHandlingCost != null) {
-      map['airport_handling_cost'] = Variable<double>(airportHandlingCost);
-    }
+    map['slaughterhouse_cost'] = Variable<double>(slaughterhouseCost);
+    map['cold_storage_cost'] = Variable<double>(coldStorageCost);
+    map['freight_cost'] = Variable<double>(freightCost);
+    map['airport_handling_cost'] = Variable<double>(airportHandlingCost);
     if (!nullToAbsent || firestoreId != null) {
       map['firestore_id'] = Variable<String>(firestoreId);
     }
@@ -932,18 +933,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       currentStage: Value(currentStage),
       slaughterDone: Value(slaughterDone),
       warehouseDone: Value(warehouseDone),
-      slaughterhouseCost: slaughterhouseCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(slaughterhouseCost),
-      coldStorageCost: coldStorageCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(coldStorageCost),
-      freightCost: freightCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(freightCost),
-      airportHandlingCost: airportHandlingCost == null && nullToAbsent
-          ? const Value.absent()
-          : Value(airportHandlingCost),
+      slaughterhouseCost: Value(slaughterhouseCost),
+      coldStorageCost: Value(coldStorageCost),
+      freightCost: Value(freightCost),
+      airportHandlingCost: Value(airportHandlingCost),
       firestoreId: firestoreId == null && nullToAbsent
           ? const Value.absent()
           : Value(firestoreId),
@@ -994,11 +987,11 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       slaughterDone: serializer.fromJson<bool>(json['slaughterDone']),
       warehouseDone: serializer.fromJson<bool>(json['warehouseDone']),
       slaughterhouseCost:
-          serializer.fromJson<double?>(json['slaughterhouseCost']),
-      coldStorageCost: serializer.fromJson<double?>(json['coldStorageCost']),
-      freightCost: serializer.fromJson<double?>(json['freightCost']),
+          serializer.fromJson<double>(json['slaughterhouseCost']),
+      coldStorageCost: serializer.fromJson<double>(json['coldStorageCost']),
+      freightCost: serializer.fromJson<double>(json['freightCost']),
       airportHandlingCost:
-          serializer.fromJson<double?>(json['airportHandlingCost']),
+          serializer.fromJson<double>(json['airportHandlingCost']),
       firestoreId: serializer.fromJson<String?>(json['firestoreId']),
       synced: serializer.fromJson<bool>(json['synced']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1042,10 +1035,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       'currentStage': serializer.toJson<String>(currentStage),
       'slaughterDone': serializer.toJson<bool>(slaughterDone),
       'warehouseDone': serializer.toJson<bool>(warehouseDone),
-      'slaughterhouseCost': serializer.toJson<double?>(slaughterhouseCost),
-      'coldStorageCost': serializer.toJson<double?>(coldStorageCost),
-      'freightCost': serializer.toJson<double?>(freightCost),
-      'airportHandlingCost': serializer.toJson<double?>(airportHandlingCost),
+      'slaughterhouseCost': serializer.toJson<double>(slaughterhouseCost),
+      'coldStorageCost': serializer.toJson<double>(coldStorageCost),
+      'freightCost': serializer.toJson<double>(freightCost),
+      'airportHandlingCost': serializer.toJson<double>(airportHandlingCost),
       'firestoreId': serializer.toJson<String?>(firestoreId),
       'synced': serializer.toJson<bool>(synced),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1087,10 +1080,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           String? currentStage,
           bool? slaughterDone,
           bool? warehouseDone,
-          Value<double?> slaughterhouseCost = const Value.absent(),
-          Value<double?> coldStorageCost = const Value.absent(),
-          Value<double?> freightCost = const Value.absent(),
-          Value<double?> airportHandlingCost = const Value.absent(),
+          double? slaughterhouseCost,
+          double? coldStorageCost,
+          double? freightCost,
+          double? airportHandlingCost,
           Value<String?> firestoreId = const Value.absent(),
           bool? synced,
           DateTime? updatedAt,
@@ -1139,16 +1132,10 @@ class Shipment extends DataClass implements Insertable<Shipment> {
         currentStage: currentStage ?? this.currentStage,
         slaughterDone: slaughterDone ?? this.slaughterDone,
         warehouseDone: warehouseDone ?? this.warehouseDone,
-        slaughterhouseCost: slaughterhouseCost.present
-            ? slaughterhouseCost.value
-            : this.slaughterhouseCost,
-        coldStorageCost: coldStorageCost.present
-            ? coldStorageCost.value
-            : this.coldStorageCost,
-        freightCost: freightCost.present ? freightCost.value : this.freightCost,
-        airportHandlingCost: airportHandlingCost.present
-            ? airportHandlingCost.value
-            : this.airportHandlingCost,
+        slaughterhouseCost: slaughterhouseCost ?? this.slaughterhouseCost,
+        coldStorageCost: coldStorageCost ?? this.coldStorageCost,
+        freightCost: freightCost ?? this.freightCost,
+        airportHandlingCost: airportHandlingCost ?? this.airportHandlingCost,
         firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
         synced: synced ?? this.synced,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -1418,10 +1405,10 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   final Value<String> currentStage;
   final Value<bool> slaughterDone;
   final Value<bool> warehouseDone;
-  final Value<double?> slaughterhouseCost;
-  final Value<double?> coldStorageCost;
-  final Value<double?> freightCost;
-  final Value<double?> airportHandlingCost;
+  final Value<double> slaughterhouseCost;
+  final Value<double> coldStorageCost;
+  final Value<double> freightCost;
+  final Value<double> airportHandlingCost;
   final Value<String?> firestoreId;
   final Value<bool> synced;
   final Value<DateTime> updatedAt;
@@ -1637,10 +1624,10 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       Value<String>? currentStage,
       Value<bool>? slaughterDone,
       Value<bool>? warehouseDone,
-      Value<double?>? slaughterhouseCost,
-      Value<double?>? coldStorageCost,
-      Value<double?>? freightCost,
-      Value<double?>? airportHandlingCost,
+      Value<double>? slaughterhouseCost,
+      Value<double>? coldStorageCost,
+      Value<double>? freightCost,
+      Value<double>? airportHandlingCost,
       Value<String?>? firestoreId,
       Value<bool>? synced,
       Value<DateTime>? updatedAt,
@@ -2257,10 +2244,10 @@ typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> currentStage,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
-  Value<double?> slaughterhouseCost,
-  Value<double?> coldStorageCost,
-  Value<double?> freightCost,
-  Value<double?> airportHandlingCost,
+  Value<double> slaughterhouseCost,
+  Value<double> coldStorageCost,
+  Value<double> freightCost,
+  Value<double> airportHandlingCost,
   Value<String?> firestoreId,
   Value<bool> synced,
   Value<DateTime> updatedAt,
@@ -2300,10 +2287,10 @@ typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
   Value<String> currentStage,
   Value<bool> slaughterDone,
   Value<bool> warehouseDone,
-  Value<double?> slaughterhouseCost,
-  Value<double?> coldStorageCost,
-  Value<double?> freightCost,
-  Value<double?> airportHandlingCost,
+  Value<double> slaughterhouseCost,
+  Value<double> coldStorageCost,
+  Value<double> freightCost,
+  Value<double> airportHandlingCost,
   Value<String?> firestoreId,
   Value<bool> synced,
   Value<DateTime> updatedAt,
@@ -2793,10 +2780,10 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> currentStage = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
-            Value<double?> slaughterhouseCost = const Value.absent(),
-            Value<double?> coldStorageCost = const Value.absent(),
-            Value<double?> freightCost = const Value.absent(),
-            Value<double?> airportHandlingCost = const Value.absent(),
+            Value<double> slaughterhouseCost = const Value.absent(),
+            Value<double> coldStorageCost = const Value.absent(),
+            Value<double> freightCost = const Value.absent(),
+            Value<double> airportHandlingCost = const Value.absent(),
             Value<String?> firestoreId = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
@@ -2879,10 +2866,10 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<String> currentStage = const Value.absent(),
             Value<bool> slaughterDone = const Value.absent(),
             Value<bool> warehouseDone = const Value.absent(),
-            Value<double?> slaughterhouseCost = const Value.absent(),
-            Value<double?> coldStorageCost = const Value.absent(),
-            Value<double?> freightCost = const Value.absent(),
-            Value<double?> airportHandlingCost = const Value.absent(),
+            Value<double> slaughterhouseCost = const Value.absent(),
+            Value<double> coldStorageCost = const Value.absent(),
+            Value<double> freightCost = const Value.absent(),
+            Value<double> airportHandlingCost = const Value.absent(),
             Value<String?> firestoreId = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),

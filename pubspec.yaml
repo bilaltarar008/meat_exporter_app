@@ -43,6 +43,8 @@ dependencies:
   firebase_auth: ^6.4.0
   google_sign_in: ^6.2.1
   cloud_firestore: ^6.3.0
+  country_picker: ^2.0.27
+  world_countries: ^4.2.0
 
 
 

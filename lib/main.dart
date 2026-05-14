@@ -29,7 +29,7 @@ void main() async {
 
       child: ScreenUtilInit(
 
-        designSize: const Size(1440, 1024),
+        designSize: const Size(390, 844),
 
         minTextAdapt: true,
 

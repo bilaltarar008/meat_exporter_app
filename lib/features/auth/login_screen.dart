@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,174 +11,316 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
 
   bool isLoading = false;
 
-  InputDecoration _input(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white54),
-      filled: true,
-      fillColor: const Color(0xFF1F2937),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10.r),
-        borderSide: BorderSide.none,
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+
+      backgroundColor: const Color(0xFF020817),
+
+      body: SafeArea(
+
+        child: SingleChildScrollView(
+
+          child: ConstrainedBox(
+
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+
+            child: Center(
+
+              child: Padding(
+
+                padding: EdgeInsets.all(24.w),
+
+                child: Container(
+
+                  constraints: const BoxConstraints(
+                    maxWidth: 420,
+                  ),
+
+                  padding: EdgeInsets.all(28.w),
+
+                  decoration: BoxDecoration(
+
+                    color: const Color(0xFF0F172A),
+
+                    borderRadius: BorderRadius.circular(28.r),
+
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+
+                  child: Column(
+
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                    children: [
+
+                      /// LOGO + TITLE
+                      Center(
+
+                        child: Column(
+
+                          children: [
+
+                            Container(
+
+                              width: 72,
+                              height: 72,
+
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB),
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+
+                              child: const Icon(
+                                Icons.inventory_2_rounded,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            const Text(
+
+                              "MeatTrace",
+
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      /// EMAIL
+                      _field(
+                        controller: emailController,
+                        hint: "Email Address",
+                        icon: Icons.email_outlined,
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      /// PASSWORD
+                      _field(
+                        controller: passwordController,
+                        hint: "Password",
+                        icon: Icons.lock_outline_rounded,
+                        obscure: true,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      /// LOGIN BUTTON
+                      SizedBox(
+
+                        width: double.infinity,
+                        height: 58,
+
+                        child: ElevatedButton(
+
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+
+                            setState(() {
+                              isLoading = true;
+                            });
+
+                            try {
+
+                              await FirebaseAuth.instance
+                                  .signInWithEmailAndPassword(
+
+                                email: emailController.text.trim(),
+                                password: passwordController.text.trim(),
+                              );
+
+                            } on FirebaseAuthException catch (e) {
+
+                              if (!mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(
+
+                                SnackBar(
+                                  content: Text(
+                                    e.message ?? 'Login failed',
+                                  ),
+                                ),
+                              );
+
+                            } finally {
+
+                              if (mounted) {
+
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              }
+                            }
+                          },
+
+                          style: ElevatedButton.styleFrom(
+
+                            backgroundColor:
+                            const Color(0xFF2563EB),
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(18.r),
+                            ),
+                          ),
+
+                          child: isLoading
+
+                              ? const SizedBox(
+
+                            height: 22,
+                            width: 22,
+
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+
+                              : const Text(
+
+                            "Login",
+
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      /// CREATE ACCOUNT
+                      Row(
+
+                        mainAxisAlignment:
+                        MainAxisAlignment.center,
+
+                        children: [
+
+                          const Text(
+
+                            "Don't have an account?",
+
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+
+                          TextButton(
+
+                            onPressed: () {
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                  const SignupScreen(),
+                                ),
+                              );
+                            },
+
+                            child: const Text(
+
+                              "Create Account",
+
+                              style: TextStyle(
+                                color: Color(0xFF3B82F6),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Future<void> _login() async {
-    if (emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email and password required")),
-      );
-      return;
-    }
+  Widget _field({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+  }) {
 
-    setState(() => isLoading = true);
+    return Container(
 
-    try {
-      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      height: 64,
 
-      final uid = cred.user!.uid;
+      decoration: BoxDecoration(
 
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+        color: const Color(0xFF1E293B),
 
-      final userData = doc.data();
+        borderRadius: BorderRadius.circular(20.r),
 
-      if (userData == null) {
-        throw Exception("User not found in Firestore");
-      }
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.05),
+        ),
+      ),
 
-      final role = userData['role'];
+      child: TextField(
 
-      print("UID: $uid");
-      print("ROLE FROM FIRESTORE: $role");
+        controller: controller,
+        obscureText: obscure,
 
-      if (!mounted) return;
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
 
-      if (role == 'owner') {
-        Navigator.pushReplacementNamed(context, '/owner');
-      } else if (role == 'slaughter') {
-        Navigator.pushReplacementNamed(context, '/slaughter');
-      } else if (role == 'manager') {
-        Navigator.pushReplacementNamed(context, '/manager');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid role")),
-        );
-      }
+        decoration: InputDecoration(
 
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
+          border: InputBorder.none,
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Login failed")),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
-
-    if (mounted) {
-      setState(() => isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B1220),
-      body: Center(
-        child: Container(
-          width: 340.w,
-          padding: EdgeInsets.all(24.w),
-          decoration: BoxDecoration(
-            color: const Color(0xFF111827),
-            borderRadius: BorderRadius.circular(16.r),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
 
-              /// TITLE
-              Text(
-                "MeatTrace",
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+          hintText: hint,
 
-              SizedBox(height: 20.h),
+          hintStyle: const TextStyle(
+            color: Colors.white54,
+            fontSize: 15,
+          ),
 
-              /// EMAIL
-              TextField(
-                controller: emailController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _input("Email"),
-              ),
-
-              SizedBox(height: 12.h),
-
-              /// PASSWORD
-              TextField(
-                controller: passwordController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _input("Password"),
-                obscureText: true,
-              ),
-
-              SizedBox(height: 20.h),
-
-              /// LOGIN BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : _login,
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text(
-                    "Login",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SignupScreen(),
-                    ),
-                  );
-                },
-                child: const Text("Create Account", style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ), ),
-              ),
-            ],
+          prefixIcon: Icon(
+            icon,
+            color: Colors.white70,
+            size: 22,
           ),
         ),
       ),

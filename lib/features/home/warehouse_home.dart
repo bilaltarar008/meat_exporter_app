@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/database/app_database.dart';
-import '../../core/services/firestore_provider.dart';
+import '../../core/services/firestore_provider.dart';import '../shipment/warehouse_processing_screen.dart';
 
 class WarehouseHomeScreen extends StatelessWidget {
   const WarehouseHomeScreen({super.key});
@@ -133,9 +133,11 @@ class WarehouseHomeScreen extends StatelessWidget {
               purchaseWeight:
               (data['purchaseWeight'] ?? 0).toDouble(),
 
-              carcassWeight: 0,
+              carcassWeight:
+              (data['carcassWeight'] ?? 0).toDouble(),
 
-              netSaleWeight: 0,
+              netSaleWeight:
+              (data['netSaleWeight'] ?? 0).toDouble(),
 
               nextAction:
               data['nextAction'] ??
@@ -155,6 +157,18 @@ class WarehouseHomeScreen extends StatelessWidget {
 
               salePrice:
               (data['salePrice'] ?? 0).toDouble(),
+
+              slaughterhouseCost:
+              (data['slaughterhouseCost'] ?? 0).toDouble(),
+
+              coldStorageCost:
+              (data['coldStorageCost'] ?? 0).toDouble(),
+
+              freightCost:
+              (data['freightCost'] ?? 0).toDouble(),
+
+              airportHandlingCost:
+              (data['airportHandlingCost'] ?? 0).toDouble(),
 
               weight:
               (data['purchaseWeight'] ?? 0).toDouble(),
@@ -289,17 +303,12 @@ class WarehouseHomeScreen extends StatelessWidget {
                               ),
 
                               Text(
+                                "${s.origin} → ${s.destination}",
 
-                                s.title,
-
-                                style: TextStyle(
-                                  fontSize:
-                                  13.sp,
-
-                                  color:
-                                  const Color(
-                                    0xFF64748B,
-                                  ),
+                                style: const TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -386,15 +395,21 @@ class WarehouseHomeScreen extends StatelessWidget {
                       child:
                       ElevatedButton.icon(
 
-                        onPressed:
-                            () async {
+                        onPressed: () {
 
-                          await firestoreService
-                              .completeShipment(
-                            s.firestoreId!,
+                          Navigator.push(
+
+                            context,
+
+                            MaterialPageRoute(
+
+                              builder: (_) =>
+                                  WarehouseProcessingScreen(
+                                    shipmentId: s.firestoreId!,
+                                  ),
+                            ),
                           );
                         },
-
                         icon: const Icon(
                           Icons.check_circle,
                         ),
