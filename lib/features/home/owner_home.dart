@@ -4,10 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../shipment/create_shipment_screen.dart';
 import 'archived_shipments_screen.dart';
 import '../../core/database/database_provider.dart';
-
+import '../../core/services/shipment_attention_service.dart';
 import '../../core/database/app_database.dart';
-
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../shipment/shipment_detail_screen.dart';
 
 import '../../core/services/firestore_provider.dart';
@@ -189,7 +188,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blueGrey.withOpacity(0.25),
+                    color: Colors.blueGrey.withValues(alpha:0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -310,6 +309,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
               builder: (context, snapshot) {
 
                 final data = snapshot.data ?? [];
+
+                final attentionService =
+                ShipmentAttentionService();
 
                 final total =
                     data.length;
@@ -445,6 +447,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
                 'airportHandlingCost':
                 data['airportHandlingCost'] ?? 0,
+
+                'totalPaid':
+                data['totalPaid'] ?? 0,
+
+                'outstandingBalance':
+                data['outstandingBalance'] ?? 0,
+
+                'paymentStatus':
+                data['paymentStatus'] ?? 'Pending',
+
+                'paymentDueDate':
+                data['paymentDueDate'],
+
+                'paymentReceivedDate':
+                data['paymentReceivedDate'],
 
                 'notes': s.notes,
 
@@ -679,7 +696,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   ),
 
                   _metric(
-                    "Amount Paidd",
+                    "Amount Paid",
                     "\$${s.purchaseCost}",
                   ),
 
@@ -691,67 +708,84 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
               /// BUTTON
 
-              SizedBox(
-                width: double.infinity,
+        SizedBox(
+          width: double.infinity,
 
-                child: ElevatedButton(
+          child: ElevatedButton(
 
-                  onPressed:
-                  s.currentStage == 'completed'
-                      ? null
-                      : () async {
+            onPressed:
+            s.currentStage == 'completed'
+                ? null
+                : () async {
 
-                    if (s.currentStage == 'owner') {
+              if (s.currentStage ==
+                  ShipmentStages.owner) {
 
-                      await firestoreService.moveToSlaughter(
-                        s.firestoreId!,
-                      );
+                await firestoreService.sendToSlaughter(
+                  docId: s.firestoreId!,
+                );
 
-                    } else if (s.currentStage ==
-                        'slaughter') {
+              } else if (s.currentStage ==
+                  ShipmentStages.slaughter) {
 
-                      await firestoreService.moveToWarehouse(
-                        s.firestoreId!,
-                      );
+                await firestoreService.moveToWarehouse(
+                  docId: s.firestoreId!,
+                );
 
-                      await db.completeSlaughter(s.id);
+                await db.completeSlaughter(s.id);
 
-                    } else if (s.currentStage ==
-                        'warehouse') {
+              } else if (s.currentStage ==
+                  ShipmentStages.warehouse) {
 
-                      await firestoreService.completeShipment(
-                        s.firestoreId!,
-                      );
+                await firestoreService.dispatchShipment(
+                  docId: s.firestoreId!,
+                );
 
-                      await db.completeWarehouse(s.id);
-                    }
-                  },
+                await db.completeWarehouse(s.id);
 
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                    _buttonColor(s.currentStage),
+              } else if (s.currentStage ==
+                  ShipmentStages.transit) {
 
-                    padding:
-                    const EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
+                await firestoreService.markDelivered(
+                  docId: s.firestoreId!,
+                );
 
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
-                  ),
+              } else if (s.currentStage ==
+                  ShipmentStages.delivered) {
 
-                  child: Text(
-                    _buttonText(s.currentStage),
+                await firestoreService.completeShipment(
+                  docId: s.firestoreId!,
+                );
+              }
+            },
 
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+            style: ElevatedButton.styleFrom(
+
+              backgroundColor:
+              _buttonColor(s.currentStage),
+
+              padding:
+              const EdgeInsets.symmetric(
+                vertical: 14,
               ),
+
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                BorderRadius.circular(14),
+              ),
+            ),
+
+            child: Text(
+
+              _buttonText(s.currentStage),
+
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        )
             ],
           ),
         ),
@@ -761,64 +795,105 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   /// ================= HELPERS =================
 
-  String _buttonText(String stage) {
+                    String _buttonText(String stage) {
+
+              switch (stage) {
+
+              case 'owner':
+              return "Send To Slaughter";
+
+              case 'slaughter':
+              return "Move To Warehouse";
+
+              case 'warehouse':
+              return "Dispatch Shipment";
+
+              case 'transit':
+              return "Mark Delivered";
+
+              case 'delivered':
+              return "Complete Shipment";
+
+              default:
+              return "Completed";
+              }
+              }
+
+                  Color _buttonColor(String stage) {
 
     switch (stage) {
 
-      case 'owner':
-        return "Send for Processing";
+    case 'owner':
+    return Colors.orange;
 
-      case 'slaughter':
-        return "Transfer to Warehouse";
+    case 'slaughter':
+    return Colors.deepOrange;
 
-      case 'warehouse':
-        return "Complete Shipment";
+    case 'warehouse':
+    return Colors.blue;
 
-      default:
-        return "Completed";
+    case 'transit':
+    return Colors.indigo;
+
+    case 'delivered':
+    return Colors.green;
+
+    default:
+    return Colors.grey;
     }
-  }
-
-  Color _buttonColor(String stage) {
-
-    switch (stage) {
-
-      case 'owner':
-        return Colors.orange;
-
-      case 'slaughter':
-        return Colors.blue;
-
-      case 'warehouse':
-        return Colors.green;
-
-      default:
-        return Colors.grey;
     }
-  }
 
   Widget _tracker(String stage) {
 
-    int step = stage == 'owner'
-        ? 1
-        : stage == 'slaughter'
-        ? 2
-        : stage == 'warehouse'
-        ? 3
-        : 4;
+    int step = 1;
+
+    switch (stage) {
+
+      case 'owner':
+        step = 1;
+        break;
+
+      case 'slaughter':
+        step = 2;
+        break;
+
+      case 'warehouse':
+        step = 3;
+        break;
+
+      case 'transit':
+        step = 4;
+        break;
+
+      case 'delivered':
+        step = 5;
+        break;
+
+      case 'completed':
+        step = 6;
+        break;
+    }
 
     return Row(
+
       children: [
 
         _circle(step >= 1, "Owner"),
-
         _divider(step >= 2),
 
         _circle(step >= 2, "Slaughter"),
-
         _divider(step >= 3),
 
         _circle(step >= 3, "Warehouse"),
+        _divider(step >= 4),
+
+        _circle(step >= 4, "Transit"),
+        _divider(step >= 5),
+
+        _circle(step >= 5, "Delivered"),
+        _divider(step >= 6),
+
+        _circle(step >= 6, "Done"),
       ],
     );
   }
@@ -889,12 +964,42 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         final firestoreShipments =
         snapshot.data!;
 
-        final shipments =
-        firestoreShipments
+        final attentionService =
+        ShipmentAttentionService();
 
-            .map((data) {
+        final alerts =
+        attentionService.generateAlerts(
+          firestoreShipments,
+        );
+
+        final shipments =
+        firestoreShipments.map((data) {
 
           return Shipment(
+
+            blocked:
+            data['blocked'] ?? false,
+
+            blockedReason:
+            data['blockedReason'] ?? '',
+
+            paymentDue:
+            data['paymentDueDate'] != null
+                ? (data['paymentDueDate'] as Timestamp).toDate()
+                : null,
+
+            paymentReceivedDate:
+            data['paymentReceivedDate'] != null
+                ? (data['paymentReceivedDate'] as Timestamp).toDate()
+                : null,
+
+            outstandingBalance:
+            (data['outstandingBalance'] ?? 0)
+                .toDouble(),
+
+            totalPaid:
+            (data['totalPaid'] ?? 0)
+                .toDouble(),
 
             id: 0,
 
@@ -949,12 +1054,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             paymentStatus:
             data['paymentStatus'] ?? 'pending',
 
-            paymentDue: null,
-
-            paymentReceivedDate: null,
-
-            outstandingBalance: 0,
-
             purchaseCost:
             (data['purchaseCost'] ?? 0).toDouble(),
 
@@ -972,7 +1071,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
             airportHandlingCost:
             (data['airportHandlingCost'] ?? 0).toDouble(),
-
 
             weight:
             (data['purchaseWeight'] ?? 0).toDouble(),
@@ -1053,7 +1151,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             matchesFilter =
                 s.currentStage ==
                     'owner';
-          }else if (selectedFilter == 'profit') {
+
+          } else if (selectedFilter ==
+              'profit') {
 
             final profit =
                 s.salePrice - s.purchaseCost;
@@ -1075,17 +1175,143 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           );
         }
 
-        return ListView.builder(
+        return Column(
 
-          itemCount: shipments.length,
+          children: [
 
-          itemBuilder: (_, i) {
+            if (alerts.isNotEmpty)
 
-            return _shipmentCard(
-              shipments[i],
-              firestoreShipments[i],
-            );
-          },
+              Container(
+
+                margin: const EdgeInsets.only(
+                  bottom: 14,
+                ),
+
+                padding: const EdgeInsets.all(16),
+
+                decoration: BoxDecoration(
+
+                  color: Colors.white,
+
+                  borderRadius:
+                  BorderRadius.circular(18),
+                ),
+
+                child: Column(
+
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+                  children: [
+
+                    const Text(
+
+                      "Needs Attention",
+
+                      style: TextStyle(
+
+                        fontWeight: FontWeight.bold,
+
+                        fontSize: 18,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    ...alerts.take(5).map(
+
+                          (alert) {
+
+                        return Padding(
+
+                          padding:
+                          const EdgeInsets.only(
+                            bottom: 12,
+                          ),
+
+                          child: Row(
+
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                            children: [
+
+                              Icon(
+
+                                Icons.warning_amber_rounded,
+
+                                color:
+                                alert.severity == 'high'
+                                    ? Colors.red
+                                    : Colors.orange,
+                              ),
+
+                              const SizedBox(width: 10),
+
+                              Expanded(
+
+                                child: Column(
+
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+
+                                  children: [
+
+                                    Text(
+
+                                      alert.title,
+
+                                      style: const TextStyle(
+                                        fontWeight:
+                                        FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 2),
+
+                                    Text(
+                                      alert.message,
+                                    ),
+
+                                    const SizedBox(height: 2),
+
+                                    Text(
+
+                                      alert.shipmentCode,
+
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+            Expanded(
+
+              child: ListView.builder(
+
+                itemCount: shipments.length,
+
+                itemBuilder: (_, i) {
+
+                  return _shipmentCard(
+                    shipments[i],
+                    firestoreShipments[i],
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1175,24 +1401,24 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
     if (status.toLowerCase().contains("completed")) {
 
-      bg = Colors.green.withOpacity(0.1);
+      bg = Colors.green.withValues(alpha: 0.1);
       text = Colors.green;
 
     } else if (status.toLowerCase()
         .contains("slaughter")) {
 
-      bg = Colors.orange.withOpacity(0.1);
+      bg = Colors.orange.withValues(alpha: 0.1);
       text = Colors.orange;
 
     } else if (status.toLowerCase()
         .contains("pending")) {
 
-      bg = Colors.red.withOpacity(0.1);
+      bg = Colors.red.withValues(alpha: 0.1);
       text = Colors.red;
 
     } else {
 
-      bg = Colors.blue.withOpacity(0.1);
+      bg = Colors.blue.withValues(alpha: 0.1);
       text = Colors.blue;
     }
 
@@ -1224,6 +1450,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
     final List<String> alerts = [];
 
+    if (s.blocked == true) {
+
+      alerts.add(
+        "Shipment blocked: ${s.blockedReason}",
+      );
+    }
+
     if (s.paymentStatus.toLowerCase() ==
         'pending') {
 
@@ -1233,9 +1466,49 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       }
     }
 
+    if (s.paymentDue != null &&
+        s.paymentStatus != 'Completed') {
+
+      final days =
+          s.paymentDue!
+              .difference(DateTime.now())
+              .inDays;
+
+      if (days < 0) {
+
+        alerts.add(
+          "Payment overdue",
+        );
+
+      } else if (days <= 3) {
+
+        alerts.add(
+          "Payment due soon",
+        );
+      }
+    }
+
+    if (s.currentStage == 'transit' &&
+        (s.awbNumber == null ||
+            s.awbNumber!.isEmpty)) {
+
+      alerts.add(
+        "AWB missing",
+      );
+    }
+
+    if (s.currentStage == 'delivered') {
+
+      alerts.add(
+        "Warehouse receipt pending",
+      );
+    }
+
     if (s.currentStage == 'owner') {
 
-      alerts.add("Awaiting processing");
+      alerts.add(
+        "Awaiting processing",
+      );
     }
 
     if (alerts.isEmpty) {
@@ -1413,7 +1686,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
           BoxShadow(
             color:
-            Colors.black.withOpacity(0.03),
+            Colors.black.withValues(alpha:0.03),
 
             blurRadius: 6,
 

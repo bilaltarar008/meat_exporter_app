@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 
 class ShipmentFirestoreService {
 
+
+
+
+
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
 
@@ -16,6 +20,16 @@ class ShipmentFirestoreService {
   /// ================= CREATE =================
 
   Future<void> createShipment({
+
+    required double salePrice,
+
+    required DateTime? paymentDueDate,
+
+    required double totalPaid,
+
+    required double outstandingBalance,
+
+    required String paymentStatus,
 
     required String shipmentCode,
 
@@ -44,6 +58,7 @@ class ShipmentFirestoreService {
     required String flightNumber,
 
     required String notes,
+
 
   }) async {
 
@@ -79,6 +94,20 @@ class ShipmentFirestoreService {
         'slaughterhouse': slaughterhouse,
         'destinationWarehouse': destinationWarehouse,
 
+        'salePrice': salePrice,
+
+        'paymentDueDate':
+        paymentDueDate,
+
+        'totalPaid':
+        totalPaid,
+
+        'outstandingBalance':
+        outstandingBalance,
+
+        'paymentStatus':
+        paymentStatus,
+
         /// PURCHASE
         'supplier': supplier,
         'animalType': animalType,
@@ -100,9 +129,9 @@ class ShipmentFirestoreService {
         /// STAGE
         'currentStage': 'owner',
 
-        'status': 'Purchase Confirmed',
+        'status': 'Awaiting Processing',
 
-        'nextAction': 'Send to slaughterhouse',
+        'nextAction': 'Send shipment to slaughterhouse',
 
         /// PAYMENT
         'paymentStatus': 'Pending',
@@ -184,153 +213,351 @@ class ShipmentFirestoreService {
 
   /// ================= WATCH =================
 
-  Future<void> moveToSlaughter(
-      String docId,
-      ) async {
+  Future<void> advanceShipmentStage({
 
-    await addSlaughterExpense(
-      docId: docId,
-      amount: 1200,
-    );
+    required String docId,
+
+    required String newStage,
+
+    required String status,
+
+    required String nextAction,
+
+    required String title,
+
+    required String description,
+
+    String? note,
+
+    double? expenseAmount,
+
+    String? expenseType,
+
+  }) async {
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    /// OPTIONAL EXPENSE
+
+    if (expenseAmount != null &&
+        expenseType != null) {
+
+      await addExpense(
+
+        docId: docId,
+
+        type: expenseType,
+
+        amount: expenseAmount,
+      );
+    }
+
+    /// BUILD TIMELINE EVENT
+
+    final timelineEvent = {
+
+      'title': title,
+
+      'description': description,
+
+      'stage': newStage,
+
+      'note': note ?? '',
+
+      'createdAt': Timestamp.now(),
+
+      'createdBy': user?.email,
+    };
+
+    /// BUILD ACTIVITY LOG
+
+    final activityLog = {
+
+      'action': title,
+
+      'stage': newStage,
+
+      'note': note ?? '',
+
+      'createdAt': Timestamp.now(),
+
+      'user': user?.email,
+    };
+
+    /// UPDATE FIRESTORE
 
     await shipments.doc(docId).update({
 
-      'currentStage': 'slaughter',
+      'currentStage': newStage,
 
-      'status': 'Animals Sent to Slaughter',
+      'status': status,
 
-      'nextAction': 'Await slaughter processing',
+      'nextAction': nextAction,
 
       'updatedAt':
       FieldValue.serverTimestamp(),
 
-      'timeline': FieldValue.arrayUnion([
-
-        {
-          'title': 'Moved to Slaughter',
-          'description': 'Shipment transferred to slaughterhouse',
-          'stage': 'slaughter',
-          'createdAt': Timestamp.now(),
-        }
-
+      'timeline':
+      FieldValue.arrayUnion([
+        timelineEvent,
       ]),
 
-      'activityLogs': FieldValue.arrayUnion([
-
-        {
-          'action': 'Stage Changed to Slaughter',
-          'stage': 'slaughter',
-          'createdAt': Timestamp.now(),
-        }
-
+      'activityLogs':
+      FieldValue.arrayUnion([
+        activityLog,
       ]),
     });
+
+    /// RECALCULATE
 
     await recalculateShipmentFinancials(
       docId,
     );
   }
+  Future<void> recordPayment({
 
-  Future<void> moveToWarehouse(
-      String docId,
-      ) async {
+    required String docId,
 
-    await addWarehouseExpense(
-      docId: docId,
-      amount: 800,
-    );
+    required double amount,
 
-    await addFreightExpense(
-      docId: docId,
-      amount: 2400,
-    );
+    required String note,
+
+  }) async {
+
+    final doc =
+    await shipments.doc(docId).get();
+
+    final data =
+    doc.data() as Map<String, dynamic>;
+
+    final currentPaid =
+    (data['totalPaid'] ?? 0).toDouble();
+
+    final salePrice =
+    (data['salePrice'] ?? 0).toDouble();
+
+    final newPaid =
+        currentPaid + amount;
+
+    final outstanding =
+        salePrice - newPaid;
+
+    final isCompleted =
+        outstanding <= 0;
 
     await shipments.doc(docId).update({
 
-      'currentStage': 'warehouse',
+      'totalPaid': newPaid,
 
-      'status': 'Processing Completed',
+      'outstandingBalance': outstanding,
 
-      'nextAction': 'Prepare warehouse operations',
+      'paymentCompleted': isCompleted,
 
-      'updatedAt':
-      FieldValue.serverTimestamp(),
+      'paymentStatus':
+      isCompleted
+          ? 'Completed'
+          : 'Partial',
 
-      'timeline': FieldValue.arrayUnion([
+      'paymentReceivedDate':
+      Timestamp.now(),
 
-        {
-          'title': 'Transferred to Warehouse',
-          'description': 'Shipment moved to warehouse stage',
-          'stage': 'warehouse',
-          'createdAt': Timestamp.now(),
-        }
-
-      ]),
-
-      'activityLogs': FieldValue.arrayUnion([
+      'paymentHistory':
+      FieldValue.arrayUnion([
 
         {
-          'action': 'Stage Changed to Warehouse',
-          'stage': 'warehouse',
-          'createdAt': Timestamp.now(),
-        }
+          'amount': amount,
 
+          'note': note,
+
+          'createdAt':
+          Timestamp.now(),
+
+          'receivedBy':
+          FirebaseAuth
+              .instance
+              .currentUser
+              ?.email,
+        }
       ]),
     });
+  }
 
-    await recalculateShipmentFinancials(
-      docId,
+  Future<void> setPaymentDueDate({
+
+    required String docId,
+
+    required DateTime dueDate,
+
+  }) async {
+
+    await shipments.doc(docId).update({
+
+      'paymentDueDate':
+      Timestamp.fromDate(dueDate),
+    });
+  }
+
+  Future<void> sendToSlaughter({
+
+    required String docId,
+
+    String? note,
+
+  }) async {
+
+    await advanceShipmentStage(
+
+      docId: docId,
+
+      newStage: ShipmentStages.slaughter,
+
+      status: 'At Slaughterhouse',
+
+      nextAction: 'Await slaughter processing',
+
+      title: 'Shipment Sent to Slaughterhouse',
+
+      description:
+      'Animals transferred for slaughter processing',
+
+      note: note,
+
+      expenseAmount: 1200,
+
+      expenseType: 'slaughterhouse',
     );
   }
 
-  Future<void> completeShipment(
-      String docId,
-      ) async {
+  Future<void> moveToWarehouse({
 
-    await addAirportHandlingExpense(
+    required String docId,
+
+    String? note,
+
+  }) async {
+
+    await advanceShipmentStage(
+
       docId: docId,
-      amount: 650,
+
+      newStage: ShipmentStages.warehouse,
+
+      status: 'In Cold Storage',
+
+      nextAction: 'Prepare export logistics',
+
+      title: 'Shipment Moved to Warehouse',
+
+      description:
+      'Cold storage and warehouse processing started',
+
+      note: note,
+
+      expenseAmount: 800,
+
+      expenseType: 'cold_storage',
+    );
+  }
+
+  Future<void> dispatchShipment({
+
+    required String docId,
+
+    String? note,
+
+  }) async {
+
+    await advanceShipmentStage(
+
+      docId: docId,
+
+      newStage: ShipmentStages.transit,
+
+      status: 'Shipment In Transit',
+
+      nextAction: 'Await delivery confirmation',
+
+      title: 'Shipment Dispatched',
+
+      description:
+      'Shipment dispatched via airline freight',
+
+      note: note,
+
+      expenseAmount: 2400,
+
+      expenseType: 'freight',
+    );
+  }
+
+  Future<void> markDelivered({
+
+    required String docId,
+
+    String? note,
+
+  }) async {
+
+    await advanceShipmentStage(
+
+      docId: docId,
+
+      newStage: ShipmentStages.delivered,
+
+      status: 'Delivered',
+
+      nextAction: 'Finalize payment',
+
+      title: 'Shipment Delivered',
+
+      description:
+      'Shipment delivered successfully to destination',
+
+      note: note,
+    );
+  }
+
+  Future<void> completeShipment({
+
+    required String docId,
+
+    String? note,
+
+  }) async {
+
+    await advanceShipmentStage(
+
+      docId: docId,
+
+      newStage: ShipmentStages.completed,
+
+      status: 'Completed',
+
+      nextAction: 'Workflow Completed',
+
+      title: 'Shipment Completed',
+
+      description:
+      'Shipment workflow finalized successfully',
+
+      note: note,
+
+      expenseAmount: 650,
+
+      expenseType: 'airport_handling',
     );
 
     await shipments.doc(docId).update({
-
-      'currentStage': 'completed',
-
-      'status': 'Shipment Completed',
-
-      'nextAction': 'Completed',
 
       'paymentStatus': 'Completed',
 
-      'updatedAt':
-      FieldValue.serverTimestamp(),
-
-      'timeline': FieldValue.arrayUnion([
-
-        {
-          'title': 'Shipment Completed',
-          'description': 'Workflow successfully completed',
-          'stage': 'completed',
-          'createdAt': Timestamp.now(),
-        }
-
-      ]),
-
-      'activityLogs': FieldValue.arrayUnion([
-
-        {
-          'action': 'Shipment Completed',
-          'stage': 'completed',
-          'createdAt': Timestamp.now(),
-        }
-
-      ]),
+      'paymentCompleted': true,
     });
-
-    await recalculateShipmentFinancials(
-      docId,
-    );
   }
+
+
+
 
   /// ================= WATCH =================
 
@@ -772,4 +999,19 @@ class ShipmentFirestoreService {
       FieldValue.serverTimestamp(),
     });
   }
+}
+
+class ShipmentStages {
+
+  static const owner = 'owner';
+
+  static const slaughter = 'slaughter';
+
+  static const warehouse = 'warehouse';
+
+  static const transit = 'transit';
+
+  static const delivered = 'delivered';
+
+  static const completed = 'completed';
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ShipmentDetailScreen extends StatelessWidget {
@@ -35,8 +34,6 @@ class ShipmentDetailScreen extends StatelessWidget {
     final double airportHandlingCost =
     (shipment['airportHandlingCost'] ?? 0).toDouble();
 
-    final profit = salePrice - purchaseCost;
-
     final totalOperationalCost =
         purchaseCost +
             slaughterhouseCost +
@@ -44,10 +41,47 @@ class ShipmentDetailScreen extends StatelessWidget {
             freightCost +
             airportHandlingCost;
 
+    final profit =
+        salePrice -
+            totalOperationalCost;
+
+    final double totalPaid =
+    (shipment['totalPaid'] ?? 0).toDouble();
+
+    final double outstandingBalance =
+        salePrice - totalPaid;
+
+    final paymentStatus =
+        shipment['paymentStatus'] ?? 'Pending';
+
+    DateTime? paymentDueDate;
+
+    final rawDueDate =
+    shipment['paymentDueDate'];
+
+    if (rawDueDate != null) {
+
+      if (rawDueDate is Timestamp) {
+
+        paymentDueDate =
+            rawDueDate.toDate();
+
+      } else if (rawDueDate is DateTime) {
+
+        paymentDueDate =
+            rawDueDate;
+      }
+    }
+
     final paymentPending =
-        (shipment['paymentStatus'] ?? '')
+        paymentStatus
             .toString()
-            .toLowerCase() == 'pending';
+            .toLowerCase() != 'completed';
+
+    final isOverdue =
+        paymentDueDate != null &&
+            DateTime.now().isAfter(paymentDueDate!) &&
+            paymentPending;
 
     return Scaffold(
 
@@ -158,6 +192,57 @@ class ShipmentDetailScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
+
+                  if (isOverdue)
+
+                    Container(
+
+                      width: double.infinity,
+
+                      margin: const EdgeInsets.only(top: 14),
+
+                      padding: const EdgeInsets.all(16),
+
+                      decoration: BoxDecoration(
+
+                        color: Colors.red.withValues(alpha: 0.08),
+
+                        borderRadius:
+                        BorderRadius.circular(16),
+
+                        border: Border.all(
+                          color: Colors.red.shade200,
+                        ),
+                      ),
+
+                      child: Row(
+
+                        children: [
+
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+
+                            child: Text(
+
+                              "Payment is overdue. Immediate action required.",
+
+                              style: TextStyle(
+
+                                color: Colors.red.shade700,
+
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   Container(
 
@@ -280,7 +365,7 @@ class ShipmentDetailScreen extends StatelessWidget {
                     decoration: BoxDecoration(
 
                       color: paymentPending
-                          ? Colors.orange.withOpacity(0.08)
+                          ? Colors.orange.withValues(alpha: 0.08)
                           : Colors.green.withOpacity(0.08),
 
                       borderRadius:
@@ -331,6 +416,102 @@ class ShipmentDetailScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
+
+            /// PAYMENT SUMMARY
+
+            const Text(
+
+              "Payment Summary",
+
+              style: TextStyle(
+
+                fontSize: 20,
+
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Container(
+
+              width: double.infinity,
+
+              padding: const EdgeInsets.all(18),
+
+              decoration: BoxDecoration(
+
+                color: Colors.white,
+
+                borderRadius:
+                BorderRadius.circular(20),
+              ),
+
+              child: Column(
+
+                children: [
+
+                  _paymentRow(
+                    "Total Sale",
+                    "\$${salePrice.toStringAsFixed(0)}",
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  _paymentRow(
+                    "Advance Received",
+                    "\$${totalPaid.toStringAsFixed(0)}",
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  _paymentRow(
+                    "Outstanding Balance",
+                    "\$${outstandingBalance.toStringAsFixed(0)}",
+                    valueColor:
+                    outstandingBalance > 0
+                        ? Colors.red
+                        : Colors.green,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  _paymentRow(
+
+                    "Payment Status",
+
+                    paymentStatus,
+
+                    valueColor:
+
+                    paymentStatus == 'Completed'
+
+                        ? Colors.green
+
+                        : paymentStatus == 'Overdue'
+
+                        ? Colors.red
+
+                        : Colors.orange,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  _paymentRow(
+
+                    "Due Date",
+
+                    paymentDueDate == null
+
+                        ? "Not Scheduled"
+
+                        :
+
+                    "${paymentDueDate.day}/${paymentDueDate.month}/${paymentDueDate.year}",
+                  ),
+                ],
+              ),
+            ),
 
             /// TIMELINE
 
@@ -440,6 +621,177 @@ class ShipmentDetailScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 18),
+            const SizedBox(height: 14),
+
+            Container(
+
+              width: double.infinity,
+
+              padding: const EdgeInsets.all(18),
+
+              decoration: BoxDecoration(
+
+                color: profit >= 0
+
+                    ? Colors.green.withValues(alpha: 0.08)
+
+                    : Colors.red.withValues(alpha: 0.08),
+
+                borderRadius:
+                BorderRadius.circular(18),
+              ),
+
+              child: Column(
+
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+                children: [
+
+                  const Text(
+
+                    "Remaining Profit",
+
+                    style: TextStyle(
+
+                      fontWeight: FontWeight.bold,
+
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Row(
+
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+
+                    children: [
+
+                      Expanded(
+
+                        child: Column(
+
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+
+                          children: [
+
+                            const Text(
+                              "Total Sale",
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+
+                              "\$${salePrice.toStringAsFixed(0)}",
+
+                              style: const TextStyle(
+
+                                fontWeight:
+                                FontWeight.bold,
+
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Icon(
+                        Icons.remove,
+                        color: Colors.grey,
+                      ),
+
+                      Expanded(
+
+                        child: Column(
+
+                          crossAxisAlignment:
+                          CrossAxisAlignment.center,
+
+                          children: [
+
+                            const Text(
+                              "Expenses",
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+
+                              "\$${totalOperationalCost.toStringAsFixed(0)}",
+
+                              style: const TextStyle(
+
+                                fontWeight:
+                                FontWeight.bold,
+
+                                fontSize: 18,
+
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.grey,
+                      ),
+
+                      Expanded(
+
+                        child: Column(
+
+                          crossAxisAlignment:
+                          CrossAxisAlignment.end,
+
+                          children: [
+
+                            const Text(
+                              "Net Profit",
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+
+                              "\$${profit.toStringAsFixed(0)}",
+
+                              style: TextStyle(
+
+                                fontWeight:
+                                FontWeight.bold,
+
+                                fontSize: 20,
+
+                                color:
+                                profit >= 0
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
             Container(
 
@@ -820,14 +1172,55 @@ class ShipmentDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _paymentRow(
+      String title,
+      String value, {
+        Color? valueColor,
+      }) {
+
+    return Row(
+
+      mainAxisAlignment:
+      MainAxisAlignment.spaceBetween,
+
+      children: [
+
+        Text(
+
+          title,
+
+          style: const TextStyle(
+            color: Colors.grey,
+          ),
+        ),
+
+        Text(
+
+          value,
+
+          style: TextStyle(
+
+            fontWeight: FontWeight.bold,
+
+            fontSize: 15,
+
+            color:
+            valueColor ??
+                Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _statusChip(String status) {
 
-    Color bg = Colors.blue.withOpacity(0.1);
+    Color bg = Colors.blue.withValues(alpha: 0.1);
     Color text = Colors.blue;
 
     if (status.toLowerCase().contains("completed")) {
 
-      bg = Colors.green.withOpacity(0.1);
+      bg = Colors.green.withValues(alpha: 0.1);
 
       text = Colors.green;
     }

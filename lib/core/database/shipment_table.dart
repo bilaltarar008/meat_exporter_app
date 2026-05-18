@@ -2,6 +2,32 @@ import 'package:drift/drift.dart';
 
 class Shipments extends Table {
 
+  BoolColumn get blocked =>
+      boolean().withDefault(
+        const Constant(false),
+      )();
+
+  TextColumn get blockedReason =>
+      text().withDefault(
+        const Constant(''),
+      )();
+
+  DateTimeColumn get paymentDue =>
+      dateTime().nullable()();
+
+  DateTimeColumn get paymentReceivedDate =>
+      dateTime().nullable()();
+
+  RealColumn get outstandingBalance =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
+  RealColumn get totalPaid =>
+      real().withDefault(
+        const Constant(0),
+      )();
+
   /// ================= PRIMARY =================
 
   IntColumn get id => integer().autoIncrement()();
@@ -86,17 +112,6 @@ class Shipments extends Table {
   TextColumn get paymentStatus =>
       text().withDefault(
         const Constant('pending'),
-      )();
-
-  DateTimeColumn get paymentDue =>
-      dateTime().nullable()();
-
-  DateTimeColumn get paymentReceivedDate =>
-      dateTime().nullable()();
-
-  RealColumn get outstandingBalance =>
-      real().withDefault(
-        const Constant(0),
       )();
 
   /// ================= FINANCE =================

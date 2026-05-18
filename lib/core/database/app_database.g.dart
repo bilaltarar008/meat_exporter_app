@@ -9,6 +9,52 @@ class $ShipmentsTable extends Shipments
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ShipmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _blockedMeta =
+      const VerificationMeta('blocked');
+  @override
+  late final GeneratedColumn<bool> blocked = GeneratedColumn<bool>(
+      'blocked', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("blocked" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _blockedReasonMeta =
+      const VerificationMeta('blockedReason');
+  @override
+  late final GeneratedColumn<String> blockedReason = GeneratedColumn<String>(
+      'blocked_reason', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
+  static const VerificationMeta _paymentDueMeta =
+      const VerificationMeta('paymentDue');
+  @override
+  late final GeneratedColumn<DateTime> paymentDue = GeneratedColumn<DateTime>(
+      'payment_due', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _paymentReceivedDateMeta =
+      const VerificationMeta('paymentReceivedDate');
+  @override
+  late final GeneratedColumn<DateTime> paymentReceivedDate =
+      GeneratedColumn<DateTime>('payment_received_date', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _outstandingBalanceMeta =
+      const VerificationMeta('outstandingBalance');
+  @override
+  late final GeneratedColumn<double> outstandingBalance =
+      GeneratedColumn<double>('outstanding_balance', aliasedName, false,
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
+  static const VerificationMeta _totalPaidMeta =
+      const VerificationMeta('totalPaid');
+  @override
+  late final GeneratedColumn<double> totalPaid = GeneratedColumn<double>(
+      'total_paid', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -133,26 +179,6 @@ class $ShipmentsTable extends Shipments
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('pending'));
-  static const VerificationMeta _paymentDueMeta =
-      const VerificationMeta('paymentDue');
-  @override
-  late final GeneratedColumn<DateTime> paymentDue = GeneratedColumn<DateTime>(
-      'payment_due', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
-  static const VerificationMeta _paymentReceivedDateMeta =
-      const VerificationMeta('paymentReceivedDate');
-  @override
-  late final GeneratedColumn<DateTime> paymentReceivedDate =
-      GeneratedColumn<DateTime>('payment_received_date', aliasedName, true,
-          type: DriftSqlType.dateTime, requiredDuringInsert: false);
-  static const VerificationMeta _outstandingBalanceMeta =
-      const VerificationMeta('outstandingBalance');
-  @override
-  late final GeneratedColumn<double> outstandingBalance =
-      GeneratedColumn<double>('outstanding_balance', aliasedName, false,
-          type: DriftSqlType.double,
-          requiredDuringInsert: false,
-          defaultValue: const Constant(0));
   static const VerificationMeta _purchaseCostMeta =
       const VerificationMeta('purchaseCost');
   @override
@@ -307,6 +333,12 @@ class $ShipmentsTable extends Shipments
       defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
+        blocked,
+        blockedReason,
+        paymentDue,
+        paymentReceivedDate,
+        outstandingBalance,
+        totalPaid,
         id,
         title,
         shipmentCode,
@@ -325,9 +357,6 @@ class $ShipmentsTable extends Shipments
         netSaleWeight,
         nextAction,
         paymentStatus,
-        paymentDue,
-        paymentReceivedDate,
-        outstandingBalance,
         purchaseCost,
         salePrice,
         weight,
@@ -359,6 +388,38 @@ class $ShipmentsTable extends Shipments
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('blocked')) {
+      context.handle(_blockedMeta,
+          blocked.isAcceptableOrUnknown(data['blocked']!, _blockedMeta));
+    }
+    if (data.containsKey('blocked_reason')) {
+      context.handle(
+          _blockedReasonMeta,
+          blockedReason.isAcceptableOrUnknown(
+              data['blocked_reason']!, _blockedReasonMeta));
+    }
+    if (data.containsKey('payment_due')) {
+      context.handle(
+          _paymentDueMeta,
+          paymentDue.isAcceptableOrUnknown(
+              data['payment_due']!, _paymentDueMeta));
+    }
+    if (data.containsKey('payment_received_date')) {
+      context.handle(
+          _paymentReceivedDateMeta,
+          paymentReceivedDate.isAcceptableOrUnknown(
+              data['payment_received_date']!, _paymentReceivedDateMeta));
+    }
+    if (data.containsKey('outstanding_balance')) {
+      context.handle(
+          _outstandingBalanceMeta,
+          outstandingBalance.isAcceptableOrUnknown(
+              data['outstanding_balance']!, _outstandingBalanceMeta));
+    }
+    if (data.containsKey('total_paid')) {
+      context.handle(_totalPaidMeta,
+          totalPaid.isAcceptableOrUnknown(data['total_paid']!, _totalPaidMeta));
+    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
@@ -453,24 +514,6 @@ class $ShipmentsTable extends Shipments
           _paymentStatusMeta,
           paymentStatus.isAcceptableOrUnknown(
               data['payment_status']!, _paymentStatusMeta));
-    }
-    if (data.containsKey('payment_due')) {
-      context.handle(
-          _paymentDueMeta,
-          paymentDue.isAcceptableOrUnknown(
-              data['payment_due']!, _paymentDueMeta));
-    }
-    if (data.containsKey('payment_received_date')) {
-      context.handle(
-          _paymentReceivedDateMeta,
-          paymentReceivedDate.isAcceptableOrUnknown(
-              data['payment_received_date']!, _paymentReceivedDateMeta));
-    }
-    if (data.containsKey('outstanding_balance')) {
-      context.handle(
-          _outstandingBalanceMeta,
-          outstandingBalance.isAcceptableOrUnknown(
-              data['outstanding_balance']!, _outstandingBalanceMeta));
     }
     if (data.containsKey('purchase_cost')) {
       context.handle(
@@ -585,6 +628,19 @@ class $ShipmentsTable extends Shipments
   Shipment map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Shipment(
+      blocked: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}blocked'])!,
+      blockedReason: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}blocked_reason'])!,
+      paymentDue: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}payment_due']),
+      paymentReceivedDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime,
+          data['${effectivePrefix}payment_received_date']),
+      outstandingBalance: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}outstanding_balance'])!,
+      totalPaid: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}total_paid'])!,
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       title: attachedDatabase.typeMapping
@@ -621,13 +677,6 @@ class $ShipmentsTable extends Shipments
           .read(DriftSqlType.string, data['${effectivePrefix}next_action'])!,
       paymentStatus: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}payment_status'])!,
-      paymentDue: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}payment_due']),
-      paymentReceivedDate: attachedDatabase.typeMapping.read(
-          DriftSqlType.dateTime,
-          data['${effectivePrefix}payment_received_date']),
-      outstandingBalance: attachedDatabase.typeMapping.read(
-          DriftSqlType.double, data['${effectivePrefix}outstanding_balance'])!,
       purchaseCost: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}purchase_cost'])!,
       salePrice: attachedDatabase.typeMapping
@@ -679,6 +728,13 @@ class $ShipmentsTable extends Shipments
 }
 
 class Shipment extends DataClass implements Insertable<Shipment> {
+  final bool blocked;
+  final String blockedReason;
+  final DateTime? paymentDue;
+  final DateTime? paymentReceivedDate;
+  final double outstandingBalance;
+  final double totalPaid;
+
   /// ================= PRIMARY =================
   final int id;
 
@@ -712,9 +768,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
 
   /// ================= PAYMENT =================
   final String paymentStatus;
-  final DateTime? paymentDue;
-  final DateTime? paymentReceivedDate;
-  final double outstandingBalance;
 
   /// ================= FINANCE =================
   final double purchaseCost;
@@ -750,7 +803,13 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   /// ================= ARCHIVE =================
   final bool archived;
   const Shipment(
-      {required this.id,
+      {required this.blocked,
+      required this.blockedReason,
+      this.paymentDue,
+      this.paymentReceivedDate,
+      required this.outstandingBalance,
+      required this.totalPaid,
+      required this.id,
       required this.title,
       this.shipmentCode,
       required this.origin,
@@ -768,9 +827,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       required this.netSaleWeight,
       required this.nextAction,
       required this.paymentStatus,
-      this.paymentDue,
-      this.paymentReceivedDate,
-      required this.outstandingBalance,
       required this.purchaseCost,
       required this.salePrice,
       required this.weight,
@@ -794,6 +850,16 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['blocked'] = Variable<bool>(blocked);
+    map['blocked_reason'] = Variable<String>(blockedReason);
+    if (!nullToAbsent || paymentDue != null) {
+      map['payment_due'] = Variable<DateTime>(paymentDue);
+    }
+    if (!nullToAbsent || paymentReceivedDate != null) {
+      map['payment_received_date'] = Variable<DateTime>(paymentReceivedDate);
+    }
+    map['outstanding_balance'] = Variable<double>(outstandingBalance);
+    map['total_paid'] = Variable<double>(totalPaid);
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     if (!nullToAbsent || shipmentCode != null) {
@@ -828,13 +894,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
     map['net_sale_weight'] = Variable<double>(netSaleWeight);
     map['next_action'] = Variable<String>(nextAction);
     map['payment_status'] = Variable<String>(paymentStatus);
-    if (!nullToAbsent || paymentDue != null) {
-      map['payment_due'] = Variable<DateTime>(paymentDue);
-    }
-    if (!nullToAbsent || paymentReceivedDate != null) {
-      map['payment_received_date'] = Variable<DateTime>(paymentReceivedDate);
-    }
-    map['outstanding_balance'] = Variable<double>(outstandingBalance);
     map['purchase_cost'] = Variable<double>(purchaseCost);
     map['sale_price'] = Variable<double>(salePrice);
     map['weight'] = Variable<double>(weight);
@@ -872,6 +931,16 @@ class Shipment extends DataClass implements Insertable<Shipment> {
 
   ShipmentsCompanion toCompanion(bool nullToAbsent) {
     return ShipmentsCompanion(
+      blocked: Value(blocked),
+      blockedReason: Value(blockedReason),
+      paymentDue: paymentDue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentDue),
+      paymentReceivedDate: paymentReceivedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentReceivedDate),
+      outstandingBalance: Value(outstandingBalance),
+      totalPaid: Value(totalPaid),
       id: Value(id),
       title: Value(title),
       shipmentCode: shipmentCode == null && nullToAbsent
@@ -905,13 +974,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       netSaleWeight: Value(netSaleWeight),
       nextAction: Value(nextAction),
       paymentStatus: Value(paymentStatus),
-      paymentDue: paymentDue == null && nullToAbsent
-          ? const Value.absent()
-          : Value(paymentDue),
-      paymentReceivedDate: paymentReceivedDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(paymentReceivedDate),
-      outstandingBalance: Value(outstandingBalance),
       purchaseCost: Value(purchaseCost),
       salePrice: Value(salePrice),
       weight: Value(weight),
@@ -950,6 +1012,14 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Shipment(
+      blocked: serializer.fromJson<bool>(json['blocked']),
+      blockedReason: serializer.fromJson<String>(json['blockedReason']),
+      paymentDue: serializer.fromJson<DateTime?>(json['paymentDue']),
+      paymentReceivedDate:
+          serializer.fromJson<DateTime?>(json['paymentReceivedDate']),
+      outstandingBalance:
+          serializer.fromJson<double>(json['outstandingBalance']),
+      totalPaid: serializer.fromJson<double>(json['totalPaid']),
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       shipmentCode: serializer.fromJson<String?>(json['shipmentCode']),
@@ -969,11 +1039,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       netSaleWeight: serializer.fromJson<double>(json['netSaleWeight']),
       nextAction: serializer.fromJson<String>(json['nextAction']),
       paymentStatus: serializer.fromJson<String>(json['paymentStatus']),
-      paymentDue: serializer.fromJson<DateTime?>(json['paymentDue']),
-      paymentReceivedDate:
-          serializer.fromJson<DateTime?>(json['paymentReceivedDate']),
-      outstandingBalance:
-          serializer.fromJson<double>(json['outstandingBalance']),
       purchaseCost: serializer.fromJson<double>(json['purchaseCost']),
       salePrice: serializer.fromJson<double>(json['salePrice']),
       weight: serializer.fromJson<double>(json['weight']),
@@ -1002,6 +1067,12 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'blocked': serializer.toJson<bool>(blocked),
+      'blockedReason': serializer.toJson<String>(blockedReason),
+      'paymentDue': serializer.toJson<DateTime?>(paymentDue),
+      'paymentReceivedDate': serializer.toJson<DateTime?>(paymentReceivedDate),
+      'outstandingBalance': serializer.toJson<double>(outstandingBalance),
+      'totalPaid': serializer.toJson<double>(totalPaid),
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'shipmentCode': serializer.toJson<String?>(shipmentCode),
@@ -1020,9 +1091,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       'netSaleWeight': serializer.toJson<double>(netSaleWeight),
       'nextAction': serializer.toJson<String>(nextAction),
       'paymentStatus': serializer.toJson<String>(paymentStatus),
-      'paymentDue': serializer.toJson<DateTime?>(paymentDue),
-      'paymentReceivedDate': serializer.toJson<DateTime?>(paymentReceivedDate),
-      'outstandingBalance': serializer.toJson<double>(outstandingBalance),
       'purchaseCost': serializer.toJson<double>(purchaseCost),
       'salePrice': serializer.toJson<double>(salePrice),
       'weight': serializer.toJson<double>(weight),
@@ -1047,7 +1115,13 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   }
 
   Shipment copyWith(
-          {int? id,
+          {bool? blocked,
+          String? blockedReason,
+          Value<DateTime?> paymentDue = const Value.absent(),
+          Value<DateTime?> paymentReceivedDate = const Value.absent(),
+          double? outstandingBalance,
+          double? totalPaid,
+          int? id,
           String? title,
           Value<String?> shipmentCode = const Value.absent(),
           String? origin,
@@ -1065,9 +1139,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           double? netSaleWeight,
           String? nextAction,
           String? paymentStatus,
-          Value<DateTime?> paymentDue = const Value.absent(),
-          Value<DateTime?> paymentReceivedDate = const Value.absent(),
-          double? outstandingBalance,
           double? purchaseCost,
           double? salePrice,
           double? weight,
@@ -1089,6 +1160,14 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           DateTime? updatedAt,
           bool? archived}) =>
       Shipment(
+        blocked: blocked ?? this.blocked,
+        blockedReason: blockedReason ?? this.blockedReason,
+        paymentDue: paymentDue.present ? paymentDue.value : this.paymentDue,
+        paymentReceivedDate: paymentReceivedDate.present
+            ? paymentReceivedDate.value
+            : this.paymentReceivedDate,
+        outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+        totalPaid: totalPaid ?? this.totalPaid,
         id: id ?? this.id,
         title: title ?? this.title,
         shipmentCode:
@@ -1113,11 +1192,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
         netSaleWeight: netSaleWeight ?? this.netSaleWeight,
         nextAction: nextAction ?? this.nextAction,
         paymentStatus: paymentStatus ?? this.paymentStatus,
-        paymentDue: paymentDue.present ? paymentDue.value : this.paymentDue,
-        paymentReceivedDate: paymentReceivedDate.present
-            ? paymentReceivedDate.value
-            : this.paymentReceivedDate,
-        outstandingBalance: outstandingBalance ?? this.outstandingBalance,
         purchaseCost: purchaseCost ?? this.purchaseCost,
         salePrice: salePrice ?? this.salePrice,
         weight: weight ?? this.weight,
@@ -1143,6 +1217,19 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       );
   Shipment copyWithCompanion(ShipmentsCompanion data) {
     return Shipment(
+      blocked: data.blocked.present ? data.blocked.value : this.blocked,
+      blockedReason: data.blockedReason.present
+          ? data.blockedReason.value
+          : this.blockedReason,
+      paymentDue:
+          data.paymentDue.present ? data.paymentDue.value : this.paymentDue,
+      paymentReceivedDate: data.paymentReceivedDate.present
+          ? data.paymentReceivedDate.value
+          : this.paymentReceivedDate,
+      outstandingBalance: data.outstandingBalance.present
+          ? data.outstandingBalance.value
+          : this.outstandingBalance,
+      totalPaid: data.totalPaid.present ? data.totalPaid.value : this.totalPaid,
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       shipmentCode: data.shipmentCode.present
@@ -1180,14 +1267,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
       paymentStatus: data.paymentStatus.present
           ? data.paymentStatus.value
           : this.paymentStatus,
-      paymentDue:
-          data.paymentDue.present ? data.paymentDue.value : this.paymentDue,
-      paymentReceivedDate: data.paymentReceivedDate.present
-          ? data.paymentReceivedDate.value
-          : this.paymentReceivedDate,
-      outstandingBalance: data.outstandingBalance.present
-          ? data.outstandingBalance.value
-          : this.outstandingBalance,
       purchaseCost: data.purchaseCost.present
           ? data.purchaseCost.value
           : this.purchaseCost,
@@ -1235,6 +1314,12 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   @override
   String toString() {
     return (StringBuffer('Shipment(')
+          ..write('blocked: $blocked, ')
+          ..write('blockedReason: $blockedReason, ')
+          ..write('paymentDue: $paymentDue, ')
+          ..write('paymentReceivedDate: $paymentReceivedDate, ')
+          ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('totalPaid: $totalPaid, ')
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('shipmentCode: $shipmentCode, ')
@@ -1253,9 +1338,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           ..write('netSaleWeight: $netSaleWeight, ')
           ..write('nextAction: $nextAction, ')
           ..write('paymentStatus: $paymentStatus, ')
-          ..write('paymentDue: $paymentDue, ')
-          ..write('paymentReceivedDate: $paymentReceivedDate, ')
-          ..write('outstandingBalance: $outstandingBalance, ')
           ..write('purchaseCost: $purchaseCost, ')
           ..write('salePrice: $salePrice, ')
           ..write('weight: $weight, ')
@@ -1282,6 +1364,12 @@ class Shipment extends DataClass implements Insertable<Shipment> {
 
   @override
   int get hashCode => Object.hashAll([
+        blocked,
+        blockedReason,
+        paymentDue,
+        paymentReceivedDate,
+        outstandingBalance,
+        totalPaid,
         id,
         title,
         shipmentCode,
@@ -1300,9 +1388,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
         netSaleWeight,
         nextAction,
         paymentStatus,
-        paymentDue,
-        paymentReceivedDate,
-        outstandingBalance,
         purchaseCost,
         salePrice,
         weight,
@@ -1328,6 +1413,12 @@ class Shipment extends DataClass implements Insertable<Shipment> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Shipment &&
+          other.blocked == this.blocked &&
+          other.blockedReason == this.blockedReason &&
+          other.paymentDue == this.paymentDue &&
+          other.paymentReceivedDate == this.paymentReceivedDate &&
+          other.outstandingBalance == this.outstandingBalance &&
+          other.totalPaid == this.totalPaid &&
           other.id == this.id &&
           other.title == this.title &&
           other.shipmentCode == this.shipmentCode &&
@@ -1346,9 +1437,6 @@ class Shipment extends DataClass implements Insertable<Shipment> {
           other.netSaleWeight == this.netSaleWeight &&
           other.nextAction == this.nextAction &&
           other.paymentStatus == this.paymentStatus &&
-          other.paymentDue == this.paymentDue &&
-          other.paymentReceivedDate == this.paymentReceivedDate &&
-          other.outstandingBalance == this.outstandingBalance &&
           other.purchaseCost == this.purchaseCost &&
           other.salePrice == this.salePrice &&
           other.weight == this.weight &&
@@ -1372,6 +1460,12 @@ class Shipment extends DataClass implements Insertable<Shipment> {
 }
 
 class ShipmentsCompanion extends UpdateCompanion<Shipment> {
+  final Value<bool> blocked;
+  final Value<String> blockedReason;
+  final Value<DateTime?> paymentDue;
+  final Value<DateTime?> paymentReceivedDate;
+  final Value<double> outstandingBalance;
+  final Value<double> totalPaid;
   final Value<int> id;
   final Value<String> title;
   final Value<String?> shipmentCode;
@@ -1390,9 +1484,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   final Value<double> netSaleWeight;
   final Value<String> nextAction;
   final Value<String> paymentStatus;
-  final Value<DateTime?> paymentDue;
-  final Value<DateTime?> paymentReceivedDate;
-  final Value<double> outstandingBalance;
   final Value<double> purchaseCost;
   final Value<double> salePrice;
   final Value<double> weight;
@@ -1414,6 +1505,12 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   final Value<DateTime> updatedAt;
   final Value<bool> archived;
   const ShipmentsCompanion({
+    this.blocked = const Value.absent(),
+    this.blockedReason = const Value.absent(),
+    this.paymentDue = const Value.absent(),
+    this.paymentReceivedDate = const Value.absent(),
+    this.outstandingBalance = const Value.absent(),
+    this.totalPaid = const Value.absent(),
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.shipmentCode = const Value.absent(),
@@ -1432,9 +1529,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.netSaleWeight = const Value.absent(),
     this.nextAction = const Value.absent(),
     this.paymentStatus = const Value.absent(),
-    this.paymentDue = const Value.absent(),
-    this.paymentReceivedDate = const Value.absent(),
-    this.outstandingBalance = const Value.absent(),
     this.purchaseCost = const Value.absent(),
     this.salePrice = const Value.absent(),
     this.weight = const Value.absent(),
@@ -1457,6 +1551,12 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.archived = const Value.absent(),
   });
   ShipmentsCompanion.insert({
+    this.blocked = const Value.absent(),
+    this.blockedReason = const Value.absent(),
+    this.paymentDue = const Value.absent(),
+    this.paymentReceivedDate = const Value.absent(),
+    this.outstandingBalance = const Value.absent(),
+    this.totalPaid = const Value.absent(),
     this.id = const Value.absent(),
     required String title,
     this.shipmentCode = const Value.absent(),
@@ -1475,9 +1575,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.netSaleWeight = const Value.absent(),
     this.nextAction = const Value.absent(),
     this.paymentStatus = const Value.absent(),
-    this.paymentDue = const Value.absent(),
-    this.paymentReceivedDate = const Value.absent(),
-    this.outstandingBalance = const Value.absent(),
     this.purchaseCost = const Value.absent(),
     this.salePrice = const Value.absent(),
     this.weight = const Value.absent(),
@@ -1500,6 +1597,12 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     this.archived = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Shipment> custom({
+    Expression<bool>? blocked,
+    Expression<String>? blockedReason,
+    Expression<DateTime>? paymentDue,
+    Expression<DateTime>? paymentReceivedDate,
+    Expression<double>? outstandingBalance,
+    Expression<double>? totalPaid,
     Expression<int>? id,
     Expression<String>? title,
     Expression<String>? shipmentCode,
@@ -1518,9 +1621,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     Expression<double>? netSaleWeight,
     Expression<String>? nextAction,
     Expression<String>? paymentStatus,
-    Expression<DateTime>? paymentDue,
-    Expression<DateTime>? paymentReceivedDate,
-    Expression<double>? outstandingBalance,
     Expression<double>? purchaseCost,
     Expression<double>? salePrice,
     Expression<double>? weight,
@@ -1543,6 +1643,13 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     Expression<bool>? archived,
   }) {
     return RawValuesInsertable({
+      if (blocked != null) 'blocked': blocked,
+      if (blockedReason != null) 'blocked_reason': blockedReason,
+      if (paymentDue != null) 'payment_due': paymentDue,
+      if (paymentReceivedDate != null)
+        'payment_received_date': paymentReceivedDate,
+      if (outstandingBalance != null) 'outstanding_balance': outstandingBalance,
+      if (totalPaid != null) 'total_paid': totalPaid,
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (shipmentCode != null) 'shipment_code': shipmentCode,
@@ -1562,10 +1669,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       if (netSaleWeight != null) 'net_sale_weight': netSaleWeight,
       if (nextAction != null) 'next_action': nextAction,
       if (paymentStatus != null) 'payment_status': paymentStatus,
-      if (paymentDue != null) 'payment_due': paymentDue,
-      if (paymentReceivedDate != null)
-        'payment_received_date': paymentReceivedDate,
-      if (outstandingBalance != null) 'outstanding_balance': outstandingBalance,
       if (purchaseCost != null) 'purchase_cost': purchaseCost,
       if (salePrice != null) 'sale_price': salePrice,
       if (weight != null) 'weight': weight,
@@ -1591,7 +1694,13 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   }
 
   ShipmentsCompanion copyWith(
-      {Value<int>? id,
+      {Value<bool>? blocked,
+      Value<String>? blockedReason,
+      Value<DateTime?>? paymentDue,
+      Value<DateTime?>? paymentReceivedDate,
+      Value<double>? outstandingBalance,
+      Value<double>? totalPaid,
+      Value<int>? id,
       Value<String>? title,
       Value<String?>? shipmentCode,
       Value<String>? origin,
@@ -1609,9 +1718,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       Value<double>? netSaleWeight,
       Value<String>? nextAction,
       Value<String>? paymentStatus,
-      Value<DateTime?>? paymentDue,
-      Value<DateTime?>? paymentReceivedDate,
-      Value<double>? outstandingBalance,
       Value<double>? purchaseCost,
       Value<double>? salePrice,
       Value<double>? weight,
@@ -1633,6 +1739,12 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       Value<DateTime>? updatedAt,
       Value<bool>? archived}) {
     return ShipmentsCompanion(
+      blocked: blocked ?? this.blocked,
+      blockedReason: blockedReason ?? this.blockedReason,
+      paymentDue: paymentDue ?? this.paymentDue,
+      paymentReceivedDate: paymentReceivedDate ?? this.paymentReceivedDate,
+      outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+      totalPaid: totalPaid ?? this.totalPaid,
       id: id ?? this.id,
       title: title ?? this.title,
       shipmentCode: shipmentCode ?? this.shipmentCode,
@@ -1651,9 +1763,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
       netSaleWeight: netSaleWeight ?? this.netSaleWeight,
       nextAction: nextAction ?? this.nextAction,
       paymentStatus: paymentStatus ?? this.paymentStatus,
-      paymentDue: paymentDue ?? this.paymentDue,
-      paymentReceivedDate: paymentReceivedDate ?? this.paymentReceivedDate,
-      outstandingBalance: outstandingBalance ?? this.outstandingBalance,
       purchaseCost: purchaseCost ?? this.purchaseCost,
       salePrice: salePrice ?? this.salePrice,
       weight: weight ?? this.weight,
@@ -1680,6 +1789,25 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (blocked.present) {
+      map['blocked'] = Variable<bool>(blocked.value);
+    }
+    if (blockedReason.present) {
+      map['blocked_reason'] = Variable<String>(blockedReason.value);
+    }
+    if (paymentDue.present) {
+      map['payment_due'] = Variable<DateTime>(paymentDue.value);
+    }
+    if (paymentReceivedDate.present) {
+      map['payment_received_date'] =
+          Variable<DateTime>(paymentReceivedDate.value);
+    }
+    if (outstandingBalance.present) {
+      map['outstanding_balance'] = Variable<double>(outstandingBalance.value);
+    }
+    if (totalPaid.present) {
+      map['total_paid'] = Variable<double>(totalPaid.value);
+    }
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
@@ -1734,16 +1862,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
     }
     if (paymentStatus.present) {
       map['payment_status'] = Variable<String>(paymentStatus.value);
-    }
-    if (paymentDue.present) {
-      map['payment_due'] = Variable<DateTime>(paymentDue.value);
-    }
-    if (paymentReceivedDate.present) {
-      map['payment_received_date'] =
-          Variable<DateTime>(paymentReceivedDate.value);
-    }
-    if (outstandingBalance.present) {
-      map['outstanding_balance'] = Variable<double>(outstandingBalance.value);
     }
     if (purchaseCost.present) {
       map['purchase_cost'] = Variable<double>(purchaseCost.value);
@@ -1812,6 +1930,12 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
   @override
   String toString() {
     return (StringBuffer('ShipmentsCompanion(')
+          ..write('blocked: $blocked, ')
+          ..write('blockedReason: $blockedReason, ')
+          ..write('paymentDue: $paymentDue, ')
+          ..write('paymentReceivedDate: $paymentReceivedDate, ')
+          ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('totalPaid: $totalPaid, ')
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('shipmentCode: $shipmentCode, ')
@@ -1830,9 +1954,6 @@ class ShipmentsCompanion extends UpdateCompanion<Shipment> {
           ..write('netSaleWeight: $netSaleWeight, ')
           ..write('nextAction: $nextAction, ')
           ..write('paymentStatus: $paymentStatus, ')
-          ..write('paymentDue: $paymentDue, ')
-          ..write('paymentReceivedDate: $paymentReceivedDate, ')
-          ..write('outstandingBalance: $outstandingBalance, ')
           ..write('purchaseCost: $purchaseCost, ')
           ..write('salePrice: $salePrice, ')
           ..write('weight: $weight, ')
@@ -2211,6 +2332,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 }
 
 typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
+  Value<bool> blocked,
+  Value<String> blockedReason,
+  Value<DateTime?> paymentDue,
+  Value<DateTime?> paymentReceivedDate,
+  Value<double> outstandingBalance,
+  Value<double> totalPaid,
   Value<int> id,
   required String title,
   Value<String?> shipmentCode,
@@ -2229,9 +2356,6 @@ typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
   Value<double> netSaleWeight,
   Value<String> nextAction,
   Value<String> paymentStatus,
-  Value<DateTime?> paymentDue,
-  Value<DateTime?> paymentReceivedDate,
-  Value<double> outstandingBalance,
   Value<double> purchaseCost,
   Value<double> salePrice,
   Value<double> weight,
@@ -2254,6 +2378,12 @@ typedef $$ShipmentsTableCreateCompanionBuilder = ShipmentsCompanion Function({
   Value<bool> archived,
 });
 typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
+  Value<bool> blocked,
+  Value<String> blockedReason,
+  Value<DateTime?> paymentDue,
+  Value<DateTime?> paymentReceivedDate,
+  Value<double> outstandingBalance,
+  Value<double> totalPaid,
   Value<int> id,
   Value<String> title,
   Value<String?> shipmentCode,
@@ -2272,9 +2402,6 @@ typedef $$ShipmentsTableUpdateCompanionBuilder = ShipmentsCompanion Function({
   Value<double> netSaleWeight,
   Value<String> nextAction,
   Value<String> paymentStatus,
-  Value<DateTime?> paymentDue,
-  Value<DateTime?> paymentReceivedDate,
-  Value<double> outstandingBalance,
   Value<double> purchaseCost,
   Value<double> salePrice,
   Value<double> weight,
@@ -2306,6 +2433,26 @@ class $$ShipmentsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<bool> get blocked => $composableBuilder(
+      column: $table.blocked, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get blockedReason => $composableBuilder(
+      column: $table.blockedReason, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get paymentDue => $composableBuilder(
+      column: $table.paymentDue, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get paymentReceivedDate => $composableBuilder(
+      column: $table.paymentReceivedDate,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get totalPaid => $composableBuilder(
+      column: $table.totalPaid, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
@@ -2363,17 +2510,6 @@ class $$ShipmentsTableFilterComposer
 
   ColumnFilters<String> get paymentStatus => $composableBuilder(
       column: $table.paymentStatus, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get paymentDue => $composableBuilder(
-      column: $table.paymentDue, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<DateTime> get paymentReceivedDate => $composableBuilder(
-      column: $table.paymentReceivedDate,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get outstandingBalance => $composableBuilder(
-      column: $table.outstandingBalance,
-      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get purchaseCost => $composableBuilder(
       column: $table.purchaseCost, builder: (column) => ColumnFilters(column));
@@ -2448,6 +2584,27 @@ class $$ShipmentsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<bool> get blocked => $composableBuilder(
+      column: $table.blocked, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get blockedReason => $composableBuilder(
+      column: $table.blockedReason,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get paymentDue => $composableBuilder(
+      column: $table.paymentDue, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get paymentReceivedDate => $composableBuilder(
+      column: $table.paymentReceivedDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get totalPaid => $composableBuilder(
+      column: $table.totalPaid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
@@ -2508,17 +2665,6 @@ class $$ShipmentsTableOrderingComposer
 
   ColumnOrderings<String> get paymentStatus => $composableBuilder(
       column: $table.paymentStatus,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get paymentDue => $composableBuilder(
-      column: $table.paymentDue, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<DateTime> get paymentReceivedDate => $composableBuilder(
-      column: $table.paymentReceivedDate,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<double> get outstandingBalance => $composableBuilder(
-      column: $table.outstandingBalance,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get purchaseCost => $composableBuilder(
@@ -2600,6 +2746,24 @@ class $$ShipmentsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<bool> get blocked =>
+      $composableBuilder(column: $table.blocked, builder: (column) => column);
+
+  GeneratedColumn<String> get blockedReason => $composableBuilder(
+      column: $table.blockedReason, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get paymentDue => $composableBuilder(
+      column: $table.paymentDue, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get paymentReceivedDate => $composableBuilder(
+      column: $table.paymentReceivedDate, builder: (column) => column);
+
+  GeneratedColumn<double> get outstandingBalance => $composableBuilder(
+      column: $table.outstandingBalance, builder: (column) => column);
+
+  GeneratedColumn<double> get totalPaid =>
+      $composableBuilder(column: $table.totalPaid, builder: (column) => column);
+
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
@@ -2653,15 +2817,6 @@ class $$ShipmentsTableAnnotationComposer
 
   GeneratedColumn<String> get paymentStatus => $composableBuilder(
       column: $table.paymentStatus, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get paymentDue => $composableBuilder(
-      column: $table.paymentDue, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get paymentReceivedDate => $composableBuilder(
-      column: $table.paymentReceivedDate, builder: (column) => column);
-
-  GeneratedColumn<double> get outstandingBalance => $composableBuilder(
-      column: $table.outstandingBalance, builder: (column) => column);
 
   GeneratedColumn<double> get purchaseCost => $composableBuilder(
       column: $table.purchaseCost, builder: (column) => column);
@@ -2747,6 +2902,12 @@ class $$ShipmentsTableTableManager extends RootTableManager<
           createComputedFieldComposer: () =>
               $$ShipmentsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
+            Value<bool> blocked = const Value.absent(),
+            Value<String> blockedReason = const Value.absent(),
+            Value<DateTime?> paymentDue = const Value.absent(),
+            Value<DateTime?> paymentReceivedDate = const Value.absent(),
+            Value<double> outstandingBalance = const Value.absent(),
+            Value<double> totalPaid = const Value.absent(),
             Value<int> id = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String?> shipmentCode = const Value.absent(),
@@ -2765,9 +2926,6 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<double> netSaleWeight = const Value.absent(),
             Value<String> nextAction = const Value.absent(),
             Value<String> paymentStatus = const Value.absent(),
-            Value<DateTime?> paymentDue = const Value.absent(),
-            Value<DateTime?> paymentReceivedDate = const Value.absent(),
-            Value<double> outstandingBalance = const Value.absent(),
             Value<double> purchaseCost = const Value.absent(),
             Value<double> salePrice = const Value.absent(),
             Value<double> weight = const Value.absent(),
@@ -2790,6 +2948,12 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<bool> archived = const Value.absent(),
           }) =>
               ShipmentsCompanion(
+            blocked: blocked,
+            blockedReason: blockedReason,
+            paymentDue: paymentDue,
+            paymentReceivedDate: paymentReceivedDate,
+            outstandingBalance: outstandingBalance,
+            totalPaid: totalPaid,
             id: id,
             title: title,
             shipmentCode: shipmentCode,
@@ -2808,9 +2972,6 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             netSaleWeight: netSaleWeight,
             nextAction: nextAction,
             paymentStatus: paymentStatus,
-            paymentDue: paymentDue,
-            paymentReceivedDate: paymentReceivedDate,
-            outstandingBalance: outstandingBalance,
             purchaseCost: purchaseCost,
             salePrice: salePrice,
             weight: weight,
@@ -2833,6 +2994,12 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             archived: archived,
           ),
           createCompanionCallback: ({
+            Value<bool> blocked = const Value.absent(),
+            Value<String> blockedReason = const Value.absent(),
+            Value<DateTime?> paymentDue = const Value.absent(),
+            Value<DateTime?> paymentReceivedDate = const Value.absent(),
+            Value<double> outstandingBalance = const Value.absent(),
+            Value<double> totalPaid = const Value.absent(),
             Value<int> id = const Value.absent(),
             required String title,
             Value<String?> shipmentCode = const Value.absent(),
@@ -2851,9 +3018,6 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<double> netSaleWeight = const Value.absent(),
             Value<String> nextAction = const Value.absent(),
             Value<String> paymentStatus = const Value.absent(),
-            Value<DateTime?> paymentDue = const Value.absent(),
-            Value<DateTime?> paymentReceivedDate = const Value.absent(),
-            Value<double> outstandingBalance = const Value.absent(),
             Value<double> purchaseCost = const Value.absent(),
             Value<double> salePrice = const Value.absent(),
             Value<double> weight = const Value.absent(),
@@ -2876,6 +3040,12 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             Value<bool> archived = const Value.absent(),
           }) =>
               ShipmentsCompanion.insert(
+            blocked: blocked,
+            blockedReason: blockedReason,
+            paymentDue: paymentDue,
+            paymentReceivedDate: paymentReceivedDate,
+            outstandingBalance: outstandingBalance,
+            totalPaid: totalPaid,
             id: id,
             title: title,
             shipmentCode: shipmentCode,
@@ -2894,9 +3064,6 @@ class $$ShipmentsTableTableManager extends RootTableManager<
             netSaleWeight: netSaleWeight,
             nextAction: nextAction,
             paymentStatus: paymentStatus,
-            paymentDue: paymentDue,
-            paymentReceivedDate: paymentReceivedDate,
-            outstandingBalance: outstandingBalance,
             purchaseCost: purchaseCost,
             salePrice: salePrice,
             weight: weight,

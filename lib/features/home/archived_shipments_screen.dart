@@ -51,6 +51,15 @@ class ArchivedShipmentsScreen extends StatelessWidget {
 
             return Shipment(
 
+              blocked:
+              data['blocked'] ?? false,
+
+              blockedReason:
+              data['blockedReason'] ?? '',
+
+              totalPaid:
+              (data['totalPaid'] ?? 0).toDouble(),
+
               id: 0,
 
               title: data['title'] ?? '',
@@ -254,7 +263,7 @@ class ArchivedShipmentsScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
 
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
                         ),
 

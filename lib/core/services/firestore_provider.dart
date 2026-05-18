@@ -17,3 +17,18 @@ Future<void> restoreShipment(
     'archived': false,
   });
 }
+
+class ShipmentStages {
+
+  static const owner = 'owner';
+
+  static const slaughter = 'slaughter';
+
+  static const warehouse = 'warehouse';
+
+  static const transit = 'transit';
+
+  static const delivered = 'delivered';
+
+  static const completed = 'completed';
+}

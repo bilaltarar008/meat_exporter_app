@@ -27,11 +27,11 @@
     bool isCreatingShipment = false;
     int currentStep = 0;
     final steps = [
-
       "Route",
       "Operations",
       "Purchase",
       "Flight",
+      "Payment",
       "Notes",
     ];
 
@@ -80,6 +80,16 @@
 
     final notesController =
     TextEditingController();
+
+    final totalPaymentController =
+    TextEditingController();
+
+    final advanceReceivedController =
+    TextEditingController();
+
+    DateTime? paymentDueDate;
+
+    String paymentStatus = 'Not Started';
 
     @override
     Widget build(BuildContext context) {
@@ -298,6 +308,35 @@
                               quantityController.text,
                             ) ?? 0,
 
+                            salePrice:
+                            double.tryParse(
+                              totalPaymentController.text,
+                            ) ?? 0,
+
+                            paymentDueDate:
+                            paymentDueDate,
+
+                            totalPaid:
+                            double.tryParse(
+                              advanceReceivedController.text,
+                            ) ?? 0,
+
+                            outstandingBalance:
+                            (
+                                (double.tryParse(
+                                  totalPaymentController.text,
+                                ) ?? 0)
+
+                                    -
+
+                                    (double.tryParse(
+                                      advanceReceivedController.text,
+                                    ) ?? 0)
+                            ),
+
+                            paymentStatus:
+                            paymentStatus,
+
                             purchaseWeight:
                             double.tryParse(
                               purchaseWeightController.text,
@@ -322,6 +361,8 @@
 
                             notes:
                             notesController.text.trim(),
+
+
                           );
 
                           if (!mounted) return;
@@ -532,6 +573,47 @@
 
           _showError(
             "Flight information is required",
+          );
+
+          return false;
+        }
+      }
+      /// STEP 4 — PAYMENT
+
+      if (currentStep == 4) {
+
+        final total =
+        double.tryParse(
+          totalPaymentController.text,
+        );
+
+        final advance =
+        double.tryParse(
+          advanceReceivedController.text,
+        );
+
+        if (total == null || total <= 0) {
+
+          _showError(
+            "Enter valid total payment",
+          );
+
+          return false;
+        }
+
+        if (advance == null || advance < 0) {
+
+          _showError(
+            "Enter valid advance payment",
+          );
+
+          return false;
+        }
+
+        if (paymentDueDate == null) {
+
+          _showError(
+            "Select payment due date",
           );
 
           return false;
@@ -758,6 +840,154 @@
               _field(
                 flightNumberController,
                 "Flight Number",
+              ),
+            ],
+          );
+
+        case 4:
+
+          return Column(
+
+            children: [
+
+              _field(
+                totalPaymentController,
+                "Total Payment",
+              ),
+
+              const SizedBox(height: 14),
+
+              _field(
+                advanceReceivedController,
+                "Advance Received",
+              ),
+
+              const SizedBox(height: 14),
+
+              InkWell(
+
+                onTap: () async {
+
+                  final picked =
+                  await showDatePicker(
+
+                    context: context,
+
+                    initialDate:
+                    DateTime.now(),
+
+                    firstDate:
+                    DateTime.now(),
+
+                    lastDate:
+                    DateTime(2030),
+                  );
+
+                  if (picked != null) {
+
+                    setState(() {
+
+                      paymentDueDate =
+                          picked;
+                    });
+                  }
+                },
+
+                child: Container(
+
+                  width: double.infinity,
+
+                  padding:
+                  const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+
+                  decoration: BoxDecoration(
+
+                    color: Colors.white,
+
+                    borderRadius:
+                    BorderRadius.circular(16),
+
+                    border: Border.all(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+
+                  child: Text(
+
+                    paymentDueDate == null
+
+                        ? "Select Payment Due Date"
+
+                        : "${paymentDueDate!.day}/${paymentDueDate!.month}/${paymentDueDate!.year}",
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              DropdownButtonFormField<String>(
+
+                value: paymentStatus,
+
+                decoration: InputDecoration(
+
+                  filled: true,
+
+                  fillColor: Colors.white,
+
+                  border: OutlineInputBorder(
+
+                    borderRadius:
+                    BorderRadius.circular(16),
+
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+
+                items: [
+
+                  'Not Started',
+                  'Advance Received',
+                  'Partial',
+                  'Pending',
+                  'Completed',
+                  'Overdue',
+
+                ].map((status) {
+
+                  return DropdownMenuItem(
+
+                    value: status,
+
+                    child: Text(status),
+                  );
+
+                }).toList(),
+
+                onChanged: (value) {
+
+                  setState(() {
+
+                    paymentStatus =
+                    value!;
+                  });
+                },
+              ),
+            ],
+          );
+        case 5:
+
+          return Column(
+
+            children: [
+
+              _field(
+                notesController,
+                "Operational Notes",
+                maxLines: 6,
               ),
             ],
           );

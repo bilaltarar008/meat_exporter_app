@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/database/app_database.dart';
-import '../../core/services/firestore_provider.dart';import '../shipment/warehouse_processing_screen.dart';
+import '../../core/services/firestore_provider.dart';import '../shipment/warehouse_processing_screen.dart';import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WarehouseHomeScreen extends StatelessWidget {
   const WarehouseHomeScreen({super.key});
@@ -93,6 +93,15 @@ class WarehouseHomeScreen extends StatelessWidget {
 
             return Shipment(
 
+              blocked:
+              data['blocked'] ?? false,
+
+              blockedReason:
+              data['blockedReason'] ?? '',
+
+              totalPaid:
+              (data['totalPaid'] ?? 0).toDouble(),
+
               id: 0,
 
               title: data['title'] ?? '',
@@ -146,11 +155,18 @@ class WarehouseHomeScreen extends StatelessWidget {
               paymentStatus:
               data['paymentStatus'] ?? 'pending',
 
-              paymentDue: null,
+              paymentDue:
+              data['paymentDueDate'] != null
+                  ? (data['paymentDueDate'] as Timestamp).toDate()
+                  : null,
 
-              paymentReceivedDate: null,
+              paymentReceivedDate:
+              data['paymentReceivedDate'] != null
+                  ? (data['paymentReceivedDate'] as Timestamp).toDate()
+                  : null,
 
-              outstandingBalance: 0,
+              outstandingBalance:
+              (data['outstandingBalance'] ?? 0).toDouble(),
 
               purchaseCost:
               (data['purchaseCost'] ?? 0).toDouble(),

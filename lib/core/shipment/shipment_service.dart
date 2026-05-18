@@ -14,6 +14,24 @@ class ShipmentService {
       'createdAt': Timestamp.now(),
       'slaughterDone': false,
       'warehouseDone': false,
+
+      'paymentStatus': 'Pending',
+
+      'paymentCompleted': false,
+
+      /// BLOCKING
+      'blocked': false,
+      'blockedReason': '',
+
+      'paymentDueDate': null,
+
+      'paymentReceivedDate': null,
+
+      'outstandingBalance': 0,
+
+      'totalPaid': 0,
+
+      'paymentHistory': [],
     });
   }
 }

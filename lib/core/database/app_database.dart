@@ -19,7 +19,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration =>
@@ -181,6 +181,29 @@ class AppDatabase extends _$AppDatabase {
               shipments.airportHandlingCost,
             );
           }
+
+          if (from < 9) {
+
+            await m.addColumn(
+              shipments,
+              shipments.blocked,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.blockedReason,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.paymentDue,
+            );
+
+            await m.addColumn(
+              shipments,
+              shipments.totalPaid,
+            );
+          }
         },
       );
 
@@ -238,6 +261,7 @@ class AppDatabase extends _$AppDatabase {
     required double cost,
     required double sale,
     required double weight,
+
   }) async {
 
     final shipmentCode =
