@@ -1,31 +1,47 @@
   import 'package:flutter/material.dart';
-  import '../../core/services/firestore_provider.dart';
-  import '../../core/database/database_provider.dart';
   import 'package:country_picker/country_picker.dart';
 
+  import '../../core/services/firestore_provider.dart';
+  import '../master_data/services/country_city_service.dart';
+
+  import '../master_data/services/master_data_service.dart';
+  import '../master_data/models/supplier_model.dart';
+  import '../master_data/models/slaughterhouse_model.dart';
 
   class CreateShipmentScreen extends StatefulWidget {
-
     const CreateShipmentScreen({super.key});
 
     @override
     State<CreateShipmentScreen> createState() =>
-        _CreateShipmentScreenState(
-
-        );
+        _CreateShipmentScreenState();
   }
 
   class _CreateShipmentScreenState
-
       extends State<CreateShipmentScreen> {
 
-    String originCountry = '';
-    String originCity = '';
+    /// ================= ROUTE =================
 
+    String originCountry = '';
     String destinationCountry = '';
+
+    String originCity = '';
     String destinationCity = '';
+
+    String? selectedOriginCity;
+    String? selectedDestinationCity;
+
+    List<String> originCities = [];
+    List<String> destinationCities = [];
+
+
+    /// ================= STATE =================
+
     bool isCreatingShipment = false;
+
     int currentStep = 0;
+
+    String shipmentCode = '';
+
     final steps = [
       "Route",
       "Operations",
@@ -35,23 +51,17 @@
       "Notes",
     ];
 
-    @override
-    void initState() {
-      super.initState();
-      _generateCode();
-    }
+    final countryCityService = CountryCityService();
+
+    /// ================= DROPDOWN =================
+
+    SupplierModel? selectedSupplier;
+
+    SlaughterhouseModel? selectedSlaughterhouse;
 
     /// ================= CONTROLLERS =================
-    String shipmentCode = '';
-
-
-    final slaughterhouseController =
-    TextEditingController();
 
     final warehouseController =
-    TextEditingController();
-
-    final supplierController =
     TextEditingController();
 
     final animalTypeController =
@@ -84,12 +94,12 @@
     final totalPaymentController =
     TextEditingController();
 
-    final advanceReceivedController =
-    TextEditingController();
+    @override
+    void initState() {
+      super.initState();
 
-    DateTime? paymentDueDate;
-
-    String paymentStatus = 'Not Started';
+      _generateCode();
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -103,6 +113,8 @@
 
           backgroundColor: Colors.white,
 
+          elevation: 0,
+
           title: const Text(
             "Create Shipment",
           ),
@@ -110,7 +122,8 @@
 
         body: SingleChildScrollView(
 
-          padding: const EdgeInsets.all(16),
+          padding:
+          const EdgeInsets.all(16),
 
           child: Column(
 
@@ -140,9 +153,7 @@
                         "Create Shipment",
 
                         style: TextStyle(
-
-                          fontSize: 26,
-
+                          fontSize: 28,
                           fontWeight:
                           FontWeight.bold,
                         ),
@@ -156,6 +167,7 @@
 
                         style: const TextStyle(
                           color: Colors.grey,
+                          fontSize: 16,
                         ),
                       ),
                     ],
@@ -163,9 +175,10 @@
 
                   Container(
 
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    padding:
+                    const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
                     ),
 
                     decoration: BoxDecoration(
@@ -184,7 +197,8 @@
 
                       style: const TextStyle(
 
-                        color: Color(0xFF2563EB),
+                        color:
+                        Color(0xFF2563EB),
 
                         fontWeight:
                         FontWeight.bold,
@@ -200,13 +214,11 @@
 
               const SizedBox(height: 30),
 
-              /// NAVIGATION
+              /// BUTTONS
 
               Row(
 
                 children: [
-
-                  /// BACK
 
                   if (currentStep > 0)
 
@@ -221,40 +233,49 @@
                           });
                         },
 
-                        child: const Text("Back"),
+                        child:
+                        const Text("Back"),
                       ),
                     ),
 
                   if (currentStep > 0)
                     const SizedBox(width: 12),
 
-                  /// NEXT / CREATE
                   Expanded(
 
                     child: ElevatedButton(
 
-                      style: ElevatedButton.styleFrom(
+                      style:
+                      ElevatedButton.styleFrom(
 
                         backgroundColor:
-                        const Color(0xFF2563EB),
+                        const Color(
+                            0xFF2563EB),
 
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                        const EdgeInsets.symmetric(
                           vertical: 16,
                         ),
 
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                        shape:
+                        RoundedRectangleBorder(
+                          borderRadius:
+                          BorderRadius.circular(
+                              14),
                         ),
                       ),
 
-                      onPressed: isCreatingShipment
+                      onPressed:
+                      isCreatingShipment
                           ? null
                           : () async {
 
-                        if (!_validateStep()) return;
+                        if (!_validateStep()) {
+                          return;
+                        }
 
-                        /// NEXT STEP
-                        if (currentStep < steps.length - 1) {
+                        if (currentStep <
+                            steps.length - 1) {
 
                           setState(() {
                             currentStep++;
@@ -263,153 +284,22 @@
                           return;
                         }
 
-                        /// CREATE SHIPMENT
-                        if (shipmentCode.isEmpty) {
-
-                          _showError(
-                            "Shipment code not generated yet",
-                          );
-
-                          return;
-                        }
-
-                        setState(() {
-                          isCreatingShipment = true;
-                        });
-
-                        try {
-
-                          await firestoreService.createShipment(
-
-                            shipmentCode: shipmentCode,
-
-                            originCountry: originCountry,
-
-                            originCity: originCity,
-
-                            destinationCountry: destinationCountry,
-
-                            destinationCity: destinationCity,
-
-                            slaughterhouse:
-                            slaughterhouseController.text.trim(),
-
-                            destinationWarehouse:
-                            warehouseController.text.trim(),
-
-                            supplier:
-                            supplierController.text.trim(),
-
-                            animalType:
-                            animalTypeController.text.trim(),
-
-                            quantity:
-                            double.tryParse(
-                              quantityController.text,
-                            ) ?? 0,
-
-                            salePrice:
-                            double.tryParse(
-                              totalPaymentController.text,
-                            ) ?? 0,
-
-                            paymentDueDate:
-                            paymentDueDate,
-
-                            totalPaid:
-                            double.tryParse(
-                              advanceReceivedController.text,
-                            ) ?? 0,
-
-                            outstandingBalance:
-                            (
-                                (double.tryParse(
-                                  totalPaymentController.text,
-                                ) ?? 0)
-
-                                    -
-
-                                    (double.tryParse(
-                                      advanceReceivedController.text,
-                                    ) ?? 0)
-                            ),
-
-                            paymentStatus:
-                            paymentStatus,
-
-                            purchaseWeight:
-                            double.tryParse(
-                              purchaseWeightController.text,
-                            ) ?? 0,
-
-                            purchaseCost:
-                            double.tryParse(
-                              purchaseCostController.text,
-                            ) ?? 0,
-
-                            freightForwarder:
-                            freightForwarderController.text.trim(),
-
-                            airline:
-                            airlineController.text.trim(),
-
-                            awbNumber:
-                            awbController.text.trim(),
-
-                            flightNumber:
-                            flightNumberController.text.trim(),
-
-                            notes:
-                            notesController.text.trim(),
-
-
-                          );
-
-                          if (!mounted) return;
-
-                          if (!context.mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-
-                            const SnackBar(
-
-                              backgroundColor: Colors.green,
-
-                              content: Text(
-                                "Shipment created successfully",
-                              ),
-                            ),
-                          );
-
-                          Navigator.pop(context);
-
-                        } catch (e) {
-
-                          _showError(
-                            "Failed to create shipment: $e",
-                          );
-
-                        } finally {
-
-                          if (mounted) {
-
-                            setState(() {
-                              isCreatingShipment = false;
-                            });
-                          }
-                        }
+                        await _createShipment();
                       },
 
-                      child: isCreatingShipment
+                      child:
+                      isCreatingShipment
 
                           ? const SizedBox(
 
                         height: 22,
                         width: 22,
 
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
+                        child:
+                        CircularProgressIndicator(
+                          color:
+                          Colors.white,
+                          strokeWidth: 2,
                         ),
                       )
 
@@ -417,13 +307,17 @@
 
                         currentStep ==
                             steps.length - 1
-
                             ? "Create Shipment"
                             : "Next",
 
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        style:
+                        const TextStyle(
+
+                          color:
+                          Colors.white,
+
+                          fontWeight:
+                          FontWeight.bold,
                         ),
                       ),
                     ),
@@ -431,243 +325,43 @@
                 ],
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
             ],
           ),
         ),
       );
     }
 
-    Future<void> _generateCode() async {
-
-      final snapshot = await firestoreService
-          .watchShipments()
-          .first;
-
-      final nextNumber =
-      (snapshot.length + 1)
-          .toString()
-          .padLeft(3, '0');
-
-      final now = DateTime.now();
-
-      final day =
-      now.day.toString().padLeft(2, '0');
-
-      final month =
-      now.month.toString().padLeft(2, '0');
-
-      final code =
-          "$day$month-$nextNumber";
-
-      setState(() {
-        shipmentCode = code;
-      });
-    }
-
-    void _showError(String message) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(message),
-        ),
-      );
-    }
-
-    bool _validateStep() {
-
-      /// STEP 0 — ROUTE
-      if (currentStep == 0) {
-
-        if (originCountry.isEmpty ||
-            originCity.isEmpty ||
-            destinationCountry.isEmpty ||
-            destinationCity.isEmpty) {
-
-          _showError(
-            "Origin and destination are required",
-          );
-
-          return false;
-        }
-      }
-
-      /// STEP 1 — OPERATIONS
-      if (currentStep == 1) {
-
-        if (slaughterhouseController.text.trim().isEmpty ||
-            warehouseController.text.trim().isEmpty) {
-
-          _showError(
-            "Operations information is required",
-          );
-
-          return false;
-        }
-      }
-
-      /// STEP 2 — PURCHASE
-      if (currentStep == 2) {
-
-        if (supplierController.text.trim().isEmpty) {
-
-          _showError(
-            "Supplier name is required",
-          );
-
-          return false;
-        }
-
-        final quantity =
-        double.tryParse(
-          quantityController.text,
-        );
-
-        final weight =
-        double.tryParse(
-          purchaseWeightController.text,
-        );
-
-        final cost =
-        double.tryParse(
-          purchaseCostController.text,
-        );
-
-        if (quantity == null || quantity <= 0) {
-
-          _showError(
-            "Enter valid quantity",
-          );
-
-          return false;
-        }
-
-        if (weight == null || weight <= 0) {
-
-          _showError(
-            "Enter valid purchase weight",
-          );
-
-          return false;
-        }
-
-        if (cost == null || cost <= 0) {
-
-          _showError(
-            "Enter valid purchase cost",
-          );
-
-          return false;
-        }
-      }
-
-      /// STEP 3 — FLIGHT
-      if (currentStep == 3) {
-
-        if (freightForwarderController.text.trim().isEmpty ||
-            airlineController.text.trim().isEmpty ||
-            awbController.text.trim().isEmpty ||
-            flightNumberController.text.trim().isEmpty) {
-
-          _showError(
-            "Flight information is required",
-          );
-
-          return false;
-        }
-      }
-      /// STEP 4 — PAYMENT
-
-      if (currentStep == 4) {
-
-        final total =
-        double.tryParse(
-          totalPaymentController.text,
-        );
-
-        final advance =
-        double.tryParse(
-          advanceReceivedController.text,
-        );
-
-        if (total == null || total <= 0) {
-
-          _showError(
-            "Enter valid total payment",
-          );
-
-          return false;
-        }
-
-        if (advance == null || advance < 0) {
-
-          _showError(
-            "Enter valid advance payment",
-          );
-
-          return false;
-        }
-
-        if (paymentDueDate == null) {
-
-          _showError(
-            "Select payment due date",
-          );
-
-          return false;
-        }
-      }
-
-      return true;
-    }
+    /// =========================================================
 
     Widget _buildStep() {
 
       switch (currentStep) {
 
+      /// =====================================================
+      /// ROUTE
+      /// =====================================================
+
         case 0:
 
           return Container(
 
-            padding: const EdgeInsets.all(18),
+            padding:
+            const EdgeInsets.all(18),
 
             decoration: BoxDecoration(
 
               color: Colors.white,
 
-              borderRadius: BorderRadius.circular(20),
+              borderRadius:
+              BorderRadius.circular(20),
             ),
 
             child: Column(
 
-              crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
 
-                const Text(
-
-                  "Shipment Route",
-
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
                 /// ORIGIN COUNTRY
-
-                const Text(
-                  "Origin Country",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
 
                 InkWell(
 
@@ -679,11 +373,19 @@
 
                       showPhoneCode: false,
 
-                      onSelect: (Country country) {
+                      onSelect: (country) async {
 
-                        setState(() {
-                          originCountry = country.name;
-                        });
+                        originCountry =
+                            country.name;
+
+                        selectedOriginCity =
+                        null;
+
+                        originCity = '';
+
+                        await _loadOriginCities();
+
+                        setState(() {});
                       },
                     );
                   },
@@ -691,36 +393,93 @@
                   child: _routeSelector(
 
                     originCountry.isEmpty
+
                         ? "Select Origin Country"
+
                         : originCountry,
                   ),
                 ),
 
                 const SizedBox(height: 14),
 
-                _field(
+                /// ORIGIN CITY
 
-                  TextEditingController(text: originCity),
+      /// ORIGIN CITY
 
-                  "Origin City",
+      DropdownButtonFormField<String>(
 
-                  onChanged: (value) {
-                    originCity = value;
-                  },
-                ),
+      initialValue: selectedOriginCity,
+
+      decoration: _dropdownDecoration(
+      "Origin City",
+      ),
+
+      hint: const Text(
+      "Select Origin City",
+      ),
+
+      items: [
+
+      ...originCities.map((city) {
+
+      return DropdownMenuItem<String>(
+
+      value: city,
+
+      child: Text(city),
+      );
+
+      }),
+      ],
+
+      onChanged: originCountry.isEmpty
+
+      ? null
+
+          : (value) {
+
+      setState(() {
+
+      selectedOriginCity = value;
+
+      originCity = value ?? '';
+      });
+      },
+      ),
+
+      Align(
+
+      alignment: Alignment.centerRight,
+
+      child: TextButton.icon(
+
+      onPressed: () async {
+
+      if (originCountry.isEmpty) {
+
+      _showError(
+      "Select country first",
+      );
+
+      return;
+      }
+
+      await _addCity(
+      isOrigin: true,
+      );
+      },
+
+      icon: const Icon(Icons.add),
+
+      label: const Text(
+      "Add New City",
+      ),
+      ),
+      ),
 
                 const SizedBox(height: 24),
 
                 /// DESTINATION COUNTRY
-
-                const Text(
-                  "Destination Country",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
 
                 InkWell(
 
@@ -732,11 +491,19 @@
 
                       showPhoneCode: false,
 
-                      onSelect: (Country country) {
+                      onSelect: (country) async {
 
-                        setState(() {
-                          destinationCountry = country.name;
-                        });
+                        destinationCountry =
+                            country.name;
+
+                        selectedDestinationCity =
+                        null;
+
+                        destinationCity = '';
+
+                        await _loadDestinationCities();
+
+                        setState(() {});
                       },
                     );
                   },
@@ -744,26 +511,96 @@
                   child: _routeSelector(
 
                     destinationCountry.isEmpty
+
                         ? "Select Destination Country"
+
                         : destinationCountry,
                   ),
                 ),
 
                 const SizedBox(height: 14),
 
-                _field(
+                /// DESTINATION CITY
 
-                  TextEditingController(text: destinationCity),
+                /// DESTINATION CITY
 
-                  "Destination City",
+                DropdownButtonFormField<String>(
 
-                  onChanged: (value) {
-                    destinationCity = value;
+                  initialValue: selectedDestinationCity,
+
+                  decoration: _dropdownDecoration(
+                    "Destination City",
+                  ),
+
+                  hint: const Text(
+                    "Select Destination City",
+                  ),
+
+                  items: [
+
+                    ...destinationCities.map((city) {
+
+                      return DropdownMenuItem<String>(
+
+                        value: city,
+
+                        child: Text(city),
+                      );
+
+                    }),
+                  ],
+
+                  onChanged: destinationCountry.isEmpty
+
+                      ? null
+
+                      : (value) {
+
+                    setState(() {
+
+                      selectedDestinationCity = value;
+
+                      destinationCity = value ?? '';
+                    });
                   },
+                ),
+
+                Align(
+
+                  alignment: Alignment.centerRight,
+
+                  child: TextButton.icon(
+
+                    onPressed: () async {
+
+                      if (destinationCountry.isEmpty) {
+
+                        _showError(
+                          "Select country first",
+                        );
+
+                        return;
+                      }
+
+                      await _addCity(
+                        isOrigin: false,
+                      );
+                    },
+
+                    icon: const Icon(Icons.add),
+
+                    label: const Text(
+                      "Add New City",
+                    ),
+                  ),
                 ),
               ],
             ),
           );
+
+      /// =====================================================
+      /// OPERATIONS
+      /// =====================================================
 
         case 1:
 
@@ -771,9 +608,86 @@
 
             children: [
 
-              _field(
-                slaughterhouseController,
-                "Slaughterhouse",
+              StreamBuilder<
+                  List<SlaughterhouseModel>>(
+
+                stream:
+                masterDataService
+                    .watchSlaughterhouses(),
+
+                builder:
+                    (context, snapshot) {
+
+                  final slaughterhouses =
+                      snapshot.data ?? [];
+
+                  return Column(
+
+                    children: [
+
+                      DropdownButtonFormField<String>(
+
+                        initialValue: selectedSlaughterhouse?.name,
+
+                        decoration:
+                        _dropdownDecoration(
+                            "Slaughterhouse"),
+
+                        items:
+                        slaughterhouses
+                            .map((item) {
+
+                          return DropdownMenuItem(
+
+                            value: item.name,
+
+                            child:
+                            Text(item.name),
+                          );
+
+                        }).toList(),
+
+                        onChanged: (value) {
+
+                          final selected =
+                          slaughterhouses
+                              .firstWhere(
+                                (e) =>
+                            e.name ==
+                                value,
+                          );
+
+                          setState(() {
+
+                            selectedSlaughterhouse =
+                                selected;
+                          });
+                        },
+                      ),
+
+                      Align(
+
+                        alignment:
+                        Alignment.centerRight,
+
+                        child:
+                        TextButton.icon(
+
+                          onPressed:
+                          _showAddSlaughterhouseDialog,
+
+                          icon:
+                          const Icon(Icons.add),
+
+                          label:
+                          const Text(
+                            "Add Slaughterhouse",
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
 
               _field(
@@ -783,15 +697,93 @@
             ],
           );
 
+      /// =====================================================
+      /// PURCHASE
+      /// =====================================================
+
         case 2:
 
           return Column(
 
             children: [
 
-              _field(
-                supplierController,
-                "Supplier Name",
+              StreamBuilder<List<SupplierModel>>(
+
+                stream:
+                masterDataService
+                    .watchSuppliers(),
+
+                builder:
+                    (context, snapshot) {
+
+                  final suppliers =
+                      snapshot.data ?? [];
+
+                  return Column(
+
+                    children: [
+
+                      DropdownButtonFormField<String>(
+
+                        initialValue: selectedSupplier?.name,
+
+                        decoration:
+                        _dropdownDecoration(
+                            "Supplier"),
+
+                        items:
+                        suppliers.map((item) {
+
+                          return DropdownMenuItem(
+
+                            value: item.name,
+
+                            child:
+                            Text(item.name),
+                          );
+
+                        }).toList(),
+
+                        onChanged: (value) {
+
+                          final selected =
+                          suppliers.firstWhere(
+                                (e) =>
+                            e.name ==
+                                value,
+                          );
+
+                          setState(() {
+
+                            selectedSupplier =
+                                selected;
+                          });
+                        },
+                      ),
+
+                      Align(
+
+                        alignment:
+                        Alignment.centerRight,
+
+                        child:
+                        TextButton.icon(
+
+                          onPressed:
+                          _showAddSupplierDialog,
+
+                          icon:
+                          const Icon(Icons.add),
+
+                          label:
+                          const Text(
+                            "Add Supplier",
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
 
               _field(
@@ -815,6 +807,10 @@
               ),
             ],
           );
+
+      /// =====================================================
+      /// FLIGHT
+      /// =====================================================
 
         case 3:
 
@@ -844,6 +840,10 @@
             ],
           );
 
+      /// =====================================================
+      /// PAYMENT
+      /// =====================================================
+
         case 4:
 
           return Column(
@@ -854,179 +854,63 @@
                 totalPaymentController,
                 "Total Payment",
               ),
-
-              const SizedBox(height: 14),
-
-              _field(
-                advanceReceivedController,
-                "Advance Received",
-              ),
-
-              const SizedBox(height: 14),
-
-              InkWell(
-
-                onTap: () async {
-
-                  final picked =
-                  await showDatePicker(
-
-                    context: context,
-
-                    initialDate:
-                    DateTime.now(),
-
-                    firstDate:
-                    DateTime.now(),
-
-                    lastDate:
-                    DateTime(2030),
-                  );
-
-                  if (picked != null) {
-
-                    setState(() {
-
-                      paymentDueDate =
-                          picked;
-                    });
-                  }
-                },
-
-                child: Container(
-
-                  width: double.infinity,
-
-                  padding:
-                  const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 18,
-                  ),
-
-                  decoration: BoxDecoration(
-
-                    color: Colors.white,
-
-                    borderRadius:
-                    BorderRadius.circular(16),
-
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                    ),
-                  ),
-
-                  child: Text(
-
-                    paymentDueDate == null
-
-                        ? "Select Payment Due Date"
-
-                        : "${paymentDueDate!.day}/${paymentDueDate!.month}/${paymentDueDate!.year}",
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              DropdownButtonFormField<String>(
-
-                value: paymentStatus,
-
-                decoration: InputDecoration(
-
-                  filled: true,
-
-                  fillColor: Colors.white,
-
-                  border: OutlineInputBorder(
-
-                    borderRadius:
-                    BorderRadius.circular(16),
-
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-
-                items: [
-
-                  'Not Started',
-                  'Advance Received',
-                  'Partial',
-                  'Pending',
-                  'Completed',
-                  'Overdue',
-
-                ].map((status) {
-
-                  return DropdownMenuItem(
-
-                    value: status,
-
-                    child: Text(status),
-                  );
-
-                }).toList(),
-
-                onChanged: (value) {
-
-                  setState(() {
-
-                    paymentStatus =
-                    value!;
-                  });
-                },
-              ),
             ],
           );
-        case 5:
-
-          return Column(
-
-            children: [
-
-              _field(
-                notesController,
-                "Operational Notes",
-                maxLines: 6,
-              ),
-            ],
-          );
+      /// =====================================================
+      /// NOTES
+      /// =====================================================
 
         default:
 
-          return Column(
-
-            children: [
-
-              _field(
-                notesController,
-                "Operational Notes",
-                maxLines: 6,
-              ),
-            ],
+          return _field(
+            notesController,
+            "Operational Notes",
+            maxLines: 6,
           );
       }
     }
 
+    /// =========================================================
+
+    InputDecoration _dropdownDecoration(
+        String label) {
+
+      return InputDecoration(
+
+        labelText: label,
+
+        filled: true,
+
+        fillColor: Colors.white,
+
+        border: OutlineInputBorder(
+
+          borderRadius:
+          BorderRadius.circular(16),
+
+          borderSide: BorderSide.none,
+        ),
+      );
+    }
+
+    /// =========================================================
 
     Widget _field(
         TextEditingController controller,
         String label, {
           int maxLines = 1,
-          Function(String)? onChanged,
         }) {
 
       return Padding(
 
-        padding: const EdgeInsets.only(bottom: 14),
+        padding:
+        const EdgeInsets.only(bottom: 14),
 
         child: TextField(
 
           controller: controller,
 
           maxLines: maxLines,
-
-          onChanged: onChanged,
 
           decoration: InputDecoration(
 
@@ -1048,22 +932,27 @@
       );
     }
 
+    /// =========================================================
+
     Widget _routeSelector(String text) {
 
       return Container(
 
         width: double.infinity,
 
-        padding: const EdgeInsets.symmetric(
+        padding:
+        const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,
         ),
 
         decoration: BoxDecoration(
 
-          color: const Color(0xFFF8FAFC),
+          color:
+          const Color(0xFFF8FAFC),
 
-          borderRadius: BorderRadius.circular(14),
+          borderRadius:
+          BorderRadius.circular(14),
 
           border: Border.all(
             color: Colors.grey.shade300,
@@ -1084,7 +973,9 @@
 
                   fontSize: 15,
 
-                  color: text.contains("Select")
+                  color:
+                  text.contains("Select")
+
                       ? Colors.grey
                       : Colors.black,
                 ),
@@ -1095,6 +986,485 @@
               Icons.keyboard_arrow_down,
             ),
           ],
+        ),
+      );
+    }
+
+    /// =========================================================
+
+    Future<void> _loadOriginCities() async {
+
+      countryCityService
+          .watchCities(originCountry)
+          .listen((cities) {
+
+        setState(() {
+
+          originCities = cities;
+        });
+      });
+    }
+
+    Future<void> _loadDestinationCities() async {
+
+      countryCityService
+          .watchCities(destinationCountry)
+          .listen((cities) {
+
+        setState(() {
+
+          destinationCities = cities;
+        });
+      });
+    }
+
+    /// =========================================================
+
+    Future<void> _addCity({
+      required bool isOrigin,
+    }) async {
+
+      final controller =
+      TextEditingController();
+
+      final city =
+      await showDialog<String>(
+
+        context: context,
+
+        builder: (_) {
+
+          return AlertDialog(
+
+            title: const Text(
+              "Add City",
+            ),
+
+            content: TextField(
+
+              controller: controller,
+
+              decoration:
+              const InputDecoration(
+                hintText:
+                "Enter city name",
+              ),
+            ),
+
+            actions: [
+
+              TextButton(
+
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+
+                child:
+                const Text("Cancel"),
+              ),
+
+              ElevatedButton(
+
+                onPressed: () {
+
+                  Navigator.pop(
+                    context,
+                    controller.text.trim(),
+                  );
+                },
+
+                child:
+                const Text("Add"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (city == null ||
+          city.isEmpty) {
+        return;
+      }
+
+      final country = isOrigin
+          ? originCountry
+          : destinationCountry;
+
+      await countryCityService.addCity(
+
+        country: country,
+
+        city: city,
+      );
+
+      if (isOrigin) {
+
+        selectedOriginCity = city;
+
+        originCity = city;
+
+        await _loadOriginCities();
+
+      } else {
+
+        selectedDestinationCity =
+            city;
+
+        destinationCity = city;
+
+        await _loadDestinationCities();
+      }
+
+      setState(() {});
+    }
+
+    /// =========================================================
+
+    Future<void> _showAddSupplierDialog() async {
+
+      final controller =
+      TextEditingController();
+
+      await showDialog(
+
+        context: context,
+
+        builder: (_) {
+
+          return AlertDialog(
+
+            title:
+            const Text("Add Supplier"),
+
+            content: TextField(
+
+              controller: controller,
+
+              decoration:
+              const InputDecoration(
+                hintText:
+                "Supplier Name",
+              ),
+            ),
+
+            actions: [
+
+              TextButton(
+
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+
+                child:
+                const Text("Cancel"),
+              ),
+
+              ElevatedButton(
+
+                onPressed: () async {
+
+                  if (controller.text
+                      .trim()
+                      .isEmpty) {
+                    return;
+                  }
+
+                  await masterDataService
+                      .addSupplier(
+                    controller.text.trim(),
+                  );
+
+                  if (!mounted) return;
+
+                  Navigator.pop(context);
+                },
+
+                child:
+                const Text("Save"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    /// =========================================================
+
+    Future<void>
+    _showAddSlaughterhouseDialog() async {
+
+      final controller =
+      TextEditingController();
+
+      await showDialog(
+
+        context: context,
+
+        builder: (_) {
+
+          return AlertDialog(
+
+            title: const Text(
+              "Add Slaughterhouse",
+            ),
+
+            content: TextField(
+
+              controller: controller,
+
+              decoration:
+              const InputDecoration(
+                hintText:
+                "Slaughterhouse Name",
+              ),
+            ),
+
+            actions: [
+
+              TextButton(
+
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+
+                child:
+                const Text("Cancel"),
+              ),
+
+              ElevatedButton(
+
+                onPressed: () async {
+
+                  if (controller.text
+                      .trim()
+                      .isEmpty) {
+                    return;
+                  }
+
+                  await masterDataService
+                      .addSlaughterhouse(
+                    controller.text.trim(),
+                  );
+
+                  if (!mounted) return;
+
+                  Navigator.pop(context);
+                },
+
+                child:
+                const Text("Save"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    /// =========================================================
+
+    Future<void> _generateCode() async {
+
+      final snapshot =
+      await firestoreService
+          .watchShipments()
+          .first;
+
+      final nextNumber =
+      (snapshot.length + 1)
+          .toString()
+          .padLeft(3, '0');
+
+      final now = DateTime.now();
+
+      final code =
+          "${now.day.toString().padLeft(2, '0')}"
+          "${now.month.toString().padLeft(2, '0')}"
+          "-$nextNumber";
+
+      setState(() {
+        shipmentCode = code;
+      });
+    }
+
+    /// =========================================================
+
+    Future<void> _createShipment() async {
+
+      if (shipmentCode.isEmpty) {
+
+        _showError(
+          "Shipment code missing",
+        );
+
+        return;
+      }
+
+      setState(() {
+        isCreatingShipment = true;
+      });
+
+      try {
+
+        await firestoreService.createShipment(
+
+          shipmentCode: shipmentCode,
+
+          totalPayment:
+          double.tryParse(
+            totalPaymentController.text,
+          ) ?? 0,
+
+          /// ROUTE
+          originCountry: originCountry,
+          originCity: originCity,
+
+          destinationCountry: destinationCountry,
+          destinationCity: destinationCity,
+
+          /// OPERATIONS
+          slaughterhouse:
+          selectedSlaughterhouse!.name,
+
+          destinationWarehouse:
+          warehouseController.text.trim(),
+
+          /// PURCHASE
+          supplier:
+          selectedSupplier!.name,
+
+          animalType:
+          animalTypeController.text.trim(),
+
+          quantity:
+          double.tryParse(
+            quantityController.text,
+          ) ?? 0,
+
+          purchaseWeight:
+          double.tryParse(
+            purchaseWeightController.text,
+          ) ?? 0,
+
+          purchaseCost:
+          double.tryParse(
+            purchaseCostController.text,
+          ) ?? 0,
+
+          /// FLIGHT
+          freightForwarder:
+          freightForwarderController.text.trim(),
+
+          airline:
+          airlineController.text.trim(),
+
+          awbNumber:
+          awbController.text.trim(),
+
+          flightNumber:
+          flightNumberController.text.trim(),
+
+          /// NOTES
+          notes:
+          notesController.text.trim(),
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+
+          const SnackBar(
+
+            backgroundColor:
+            Colors.green,
+
+            content: Text(
+              "Shipment created successfully",
+            ),
+          ),
+        );
+
+        Navigator.pop(context);
+
+      } catch (e) {
+
+        _showError(
+          "Failed to create shipment: $e",
+        );
+
+      } finally {
+
+        if (mounted) {
+
+          setState(() {
+            isCreatingShipment =
+            false;
+          });
+        }
+      }
+    }
+
+    /// =========================================================
+
+    bool _validateStep() {
+
+      if (currentStep == 0) {
+
+        if (originCountry.isEmpty ||
+            originCity.isEmpty ||
+            destinationCountry.isEmpty ||
+            destinationCity.isEmpty) {
+
+          _showError(
+            "Select route details",
+          );
+
+          return false;
+        }
+      }
+
+      if (currentStep == 1) {
+
+        if (selectedSlaughterhouse ==
+            null) {
+
+          _showError(
+            "Select slaughterhouse",
+          );
+
+          return false;
+        }
+      }
+
+      if (currentStep == 2) {
+
+        if (selectedSupplier ==
+            null) {
+
+          _showError(
+            "Select supplier",
+          );
+
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    /// =========================================================
+
+    void _showError(String message) {
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        SnackBar(
+
+          backgroundColor:
+          Colors.red,
+
+          content: Text(message),
         ),
       );
     }

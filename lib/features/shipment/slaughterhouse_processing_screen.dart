@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../core/services/firestore_provider.dart';
+import 'shipment_workflow_service.dart';
+import 'shipment_status.dart';
 
 class SlaughterhouseProcessingScreen
     extends StatefulWidget {
@@ -17,11 +21,18 @@ class SlaughterhouseProcessingScreen
       _SlaughterhouseProcessingScreenState();
 }
 
+class MeatItem {
+
+  final TextEditingController nameController;
+  final TextEditingController weightController;
+
+  MeatItem()
+      : nameController = TextEditingController(),
+        weightController = TextEditingController();
+}
+
 class _SlaughterhouseProcessingScreenState
     extends State<SlaughterhouseProcessingScreen> {
-
-  final carcassWeightController =
-  TextEditingController();
 
   final slaughterCostController =
   TextEditingController();
@@ -29,17 +40,16 @@ class _SlaughterhouseProcessingScreenState
   final wastageController =
   TextEditingController();
 
-  final notesController =
+  final slaughterNotesController =
   TextEditingController();
+
+  final List<MeatItem> meatItems = [
+    MeatItem(),
+  ];
 
   bool loading = false;
 
   Future<void> _submit() async {
-
-    final carcassWeight =
-    double.tryParse(
-      carcassWeightController.text,
-    );
 
     final slaughterCost =
     double.tryParse(
@@ -49,20 +59,53 @@ class _SlaughterhouseProcessingScreenState
     final wastage =
         double.tryParse(
           wastageController.text,
-        ) ??
-            0;
-
-    if (carcassWeight == null ||
-        carcassWeight <= 0) {
-
-      _error("Enter valid carcass weight");
-      return;
-    }
+        ) ?? 0;
 
     if (slaughterCost == null ||
         slaughterCost <= 0) {
 
-      _error("Enter valid slaughter cost");
+      _error(
+        "Enter valid slaughter cost",
+      );
+
+      return;
+    }
+
+    final List<Map<String, dynamic>>
+    formattedMeatItems = [];
+
+    double totalWeight = 0;
+
+    for (final item in meatItems) {
+
+      final name =
+      item.nameController.text.trim();
+
+      final weight =
+          double.tryParse(
+            item.weightController.text,
+          ) ??
+              0;
+
+      if (name.isEmpty || weight <= 0) {
+        continue;
+      }
+
+      formattedMeatItems.add({
+
+        'name': name,
+        'weight': weight,
+      });
+
+      totalWeight += weight;
+    }
+
+    if (formattedMeatItems.isEmpty) {
+
+      _error(
+        "Add at least one meat item",
+      );
+
       return;
     }
 
@@ -70,55 +113,106 @@ class _SlaughterhouseProcessingScreenState
       loading = true;
     });
 
-    await firestoreService.shipments
-        .doc(widget.shipmentId)
-        .update({
+    try {
 
-      'carcassWeight': carcassWeight,
+      await FirebaseFirestore.instance
+          .collection('shipments')
+          .doc(widget.shipmentId)
+          .update({
 
-      'wastageWeight': wastage,
+        'wastageWeight':
+        wastage,
 
-      'slaughterhouseCost':
-      slaughterCost,
+        'slaughterhouseCost':
+        slaughterCost,
 
-      'slaughterNotes':
-      notesController.text.trim(),
+        'meatItems':
+        formattedMeatItems,
 
-      'currentStage': 'warehouse',
+        'carcassWeight':
+        totalWeight,
 
-      'status':
-      'Processing Completed',
+        'slaughterNotes':
+        slaughterNotesController
+            .text
+            .trim(),
 
-      'nextAction':
-      'Warehouse operations pending',
-    });
+        'currentStage':
+        'warehouse',
 
-    await firestoreService
-        .addSlaughterExpense(
+        'status':
+        ShipmentStatus
+            .animalsSlaughtered
+            .label,
 
-      docId: widget.shipmentId,
+        'updatedAt':
+        FieldValue.serverTimestamp(),
+      });
 
-      amount: slaughterCost,
-    );
+      await firestoreService
+          .addSlaughterExpense(
 
-    await firestoreService
-        .recalculateShipmentFinancials(
-      widget.shipmentId,
-    );
+        docId:
+        widget.shipmentId,
 
-    if (context.mounted) {
+        amount:
+        slaughterCost,
+      );
+
+      await firestoreService
+          .recalculateShipmentFinancials(
+        widget.shipmentId,
+      );
+
+      await shipmentWorkflowService
+          .updateShipmentStatus(
+
+        shipmentId:
+        widget.shipmentId,
+
+        status:
+        ShipmentStatus
+            .animalsSlaughtered
+            .label,
+
+        note:
+        slaughterNotesController
+            .text
+            .trim(),
+      );
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context)
           .showSnackBar(
 
         const SnackBar(
+
+          backgroundColor:
+          Colors.green,
+
           content: Text(
-            "Processing completed successfully",
+            "Shipment moved to warehouse successfully",
           ),
         ),
       );
 
       Navigator.pop(context);
+
+    } catch (e) {
+
+      _error(
+        "Failed: $e",
+      );
+
+    } finally {
+
+      if (mounted) {
+
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
 
@@ -128,8 +222,12 @@ class _SlaughterhouseProcessingScreenState
         .showSnackBar(
 
       SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(message),
+
+        backgroundColor:
+        Colors.red,
+
+        content:
+        Text(message),
       ),
     );
   }
@@ -144,22 +242,30 @@ class _SlaughterhouseProcessingScreenState
 
       appBar: AppBar(
 
-        backgroundColor: Colors.white,
+        backgroundColor:
+        Colors.white,
 
         elevation: 0,
 
         title: const Text(
+
           "Slaughterhouse Processing",
+
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
+
+            color:
+            Color(0xFF0F172A),
+
+            fontWeight:
+            FontWeight.bold,
           ),
         ),
       ),
 
       body: SingleChildScrollView(
 
-        padding: const EdgeInsets.all(20),
+        padding:
+        const EdgeInsets.all(20),
 
         child: Column(
 
@@ -173,9 +279,14 @@ class _SlaughterhouseProcessingScreenState
               "Processing Information",
 
               style: TextStyle(
+
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+
+                fontWeight:
+                FontWeight.bold,
+
+                color:
+                Color(0xFF0F172A),
               ),
             ),
 
@@ -183,38 +294,186 @@ class _SlaughterhouseProcessingScreenState
 
             const Text(
 
-              "Complete slaughterhouse operational details before transferring shipment to warehouse.",
+              "Complete slaughterhouse processing before moving shipment to warehouse.",
 
               style: TextStyle(
-                color: Color(0xFF64748B),
+
+                color:
+                Color(0xFF64748B),
+
                 height: 1.5,
               ),
             ),
 
             const SizedBox(height: 30),
 
-            _field(
-              carcassWeightController,
-              "Carcass Weight (KG)",
-              Icons.scale_rounded,
+            const Align(
+
+              alignment:
+              Alignment.centerLeft,
+
+              child: Text(
+
+                "Meat Breakdown",
+
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight:
+                  FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            ...List.generate(
+              meatItems.length,
+                  (index) {
+
+                final item =
+                meatItems[index];
+
+                return Padding(
+
+                  padding:
+                  const EdgeInsets.only(
+                    bottom: 16,
+                  ),
+
+                  child: Row(
+
+                    children: [
+
+                      Expanded(
+
+                        flex: 2,
+
+                        child: TextField(
+
+                          controller:
+                          item.nameController,
+
+                          decoration:
+                          InputDecoration(
+
+                            hintText:
+                            "Mutton / Ribs",
+
+                            filled: true,
+
+                            fillColor:
+                            Colors.white,
+
+                            border:
+                            OutlineInputBorder(
+
+                              borderRadius:
+                              BorderRadius.circular(
+                                18,
+                              ),
+
+                              borderSide:
+                              BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+
+                        child: TextField(
+
+                          controller:
+                          item.weightController,
+
+                          keyboardType:
+                          TextInputType.number,
+
+                          decoration:
+                          InputDecoration(
+
+                            hintText:
+                            "KG",
+
+                            filled: true,
+
+                            fillColor:
+                            Colors.white,
+
+                            border:
+                            OutlineInputBorder(
+
+                              borderRadius:
+                              BorderRadius.circular(
+                                18,
+                              ),
+
+                              borderSide:
+                              BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            Align(
+
+              alignment:
+              Alignment.centerRight,
+
+              child: TextButton.icon(
+
+                onPressed: () {
+
+                  setState(() {
+
+                    meatItems.add(
+                      MeatItem(),
+                    );
+                  });
+                },
+
+                icon:
+                const Icon(Icons.add),
+
+                label: const Text(
+                  "Add More Meat",
+                ),
+              ),
             ),
 
             _field(
+
               slaughterCostController,
+
               "Slaughter Cost",
+
               Icons.payments_outlined,
             ),
 
             _field(
+
               wastageController,
+
               "Wastage Weight",
+
               Icons.warning_amber_rounded,
             ),
 
             _field(
-              notesController,
-              "Processing Notes",
+
+              slaughterNotesController,
+
+              "Operational Notes",
+
               Icons.description_outlined,
+
               maxLines: 5,
             ),
 
@@ -227,7 +486,9 @@ class _SlaughterhouseProcessingScreenState
               child: ElevatedButton(
 
                 onPressed:
-                loading ? null : _submit,
+                loading
+                    ? null
+                    : _submit,
 
                 style:
                 ElevatedButton.styleFrom(
@@ -237,14 +498,15 @@ class _SlaughterhouseProcessingScreenState
 
                   padding:
                   const EdgeInsets.symmetric(
-                    vertical: 16,
+                    vertical: 18,
                   ),
 
                   shape:
                   RoundedRectangleBorder(
+
                     borderRadius:
                     BorderRadius.circular(
-                      16,
+                      18,
                     ),
                   ),
                 ),
@@ -259,19 +521,26 @@ class _SlaughterhouseProcessingScreenState
 
                   child:
                   CircularProgressIndicator(
-                    color: Colors.white,
+
+                    color:
+                    Colors.white,
+
                     strokeWidth: 2,
                   ),
                 )
 
                     : const Text(
 
-                  "Transfer To Warehouse",
+                  "Move To Warehouse",
 
                   style: TextStyle(
-                    color: Colors.white,
+
+                    color:
+                    Colors.white,
+
                     fontWeight:
                     FontWeight.bold,
+
                     fontSize: 16,
                   ),
                 ),
@@ -293,30 +562,42 @@ class _SlaughterhouseProcessingScreenState
     return Padding(
 
       padding:
-      const EdgeInsets.only(bottom: 18),
+      const EdgeInsets.only(
+        bottom: 18,
+      ),
 
       child: TextField(
 
-        controller: controller,
+        controller:
+        controller,
 
-        maxLines: maxLines,
+        maxLines:
+        maxLines,
 
-        decoration: InputDecoration(
+        decoration:
+        InputDecoration(
 
-          labelText: label,
+          labelText:
+          label,
 
-          prefixIcon: Icon(icon),
+          prefixIcon:
+          Icon(icon),
 
           filled: true,
 
-          fillColor: Colors.white,
+          fillColor:
+          Colors.white,
 
-          border: OutlineInputBorder(
+          border:
+          OutlineInputBorder(
 
             borderRadius:
-            BorderRadius.circular(18),
+            BorderRadius.circular(
+              18,
+            ),
 
-            borderSide: BorderSide.none,
+            borderSide:
+            BorderSide.none,
           ),
         ),
       ),

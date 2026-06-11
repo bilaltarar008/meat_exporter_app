@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../core/services/firestore_provider.dart';
+import 'shipment_status.dart';
+import 'shipment_workflow_service.dart';
 
 class WarehouseProcessingScreen
     extends StatefulWidget {
@@ -20,174 +24,142 @@ class WarehouseProcessingScreen
 class _WarehouseProcessingScreenState
     extends State<WarehouseProcessingScreen> {
 
-  final coldStorageController =
+  final warehouseCostController =
   TextEditingController();
 
-  final freightController =
-  TextEditingController();
-
-  final airportController =
-  TextEditingController();
-
-  final netWeightController =
-  TextEditingController();
-
-  final damagedController =
-  TextEditingController();
-
-  final notesController =
+  final warehouseNotesController =
   TextEditingController();
 
   bool loading = false;
 
+  Map<String, dynamic>? shipment;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShipment();
+  }
+
+  Future<void> _loadShipment() async {
+
+    final doc =
+    await FirebaseFirestore.instance
+        .collection('shipments')
+        .doc(widget.shipmentId)
+        .get();
+
+    shipment = doc.data();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> _submit() async {
 
-    final coldStorage =
-    double.tryParse(
-      coldStorageController.text,
-    );
-
-    final freight =
-    double.tryParse(
-      freightController.text,
-    );
-
-    final airport =
-    double.tryParse(
-      airportController.text,
-    );
-
-    final netWeight =
-    double.tryParse(
-      netWeightController.text,
-    );
-
-    final damaged =
+    final warehouseCost =
         double.tryParse(
-          damagedController.text,
-        ) ??
-            0;
-
-    if (coldStorage == null ||
-        coldStorage <= 0) {
-
-      _error(
-        "Enter valid cold storage cost",
-      );
-
-      return;
-    }
-
-    if (freight == null ||
-        freight <= 0) {
-
-      _error(
-        "Enter valid freight cost",
-      );
-
-      return;
-    }
-
-    if (airport == null ||
-        airport <= 0) {
-
-      _error(
-        "Enter valid airport handling cost",
-      );
-
-      return;
-    }
-
-    if (netWeight == null ||
-        netWeight <= 0) {
-
-      _error(
-        "Enter valid net sale weight",
-      );
-
-      return;
-    }
+          warehouseCostController.text,
+        ) ?? 0;
 
     setState(() {
       loading = true;
     });
 
-    await firestoreService.shipments
-        .doc(widget.shipmentId)
-        .update({
+    try {
 
-      'coldStorageCost':
-      coldStorage,
+      await FirebaseFirestore.instance
+          .collection('shipments')
+          .doc(widget.shipmentId)
+          .update({
 
-      'freightCost':
-      freight,
+        'warehouseCost':
+        warehouseCost,
 
-      'airportHandlingCost':
-      airport,
+        'warehouseNotes':
+        warehouseNotesController
+            .text
+            .trim(),
 
-      'netSaleWeight':
-      netWeight,
+        'currentStage':
+        'transit',
 
-      'damagedStock':
-      damaged,
+        'status':
+        ShipmentStatus
+            .warehouseReceived
+            .label,
 
-      'warehouseNotes':
-      notesController.text.trim(),
+        'updatedAt':
+        FieldValue.serverTimestamp(),
+      });
 
-      'currentStage': 'completed',
+      final totalWarehouseExpense =
+          warehouseCost;
 
-      'status':
-      'Shipment Completed',
+      await firestoreService
+          .addWarehouseExpense(
 
-      'nextAction':
-      'Workflow completed',
+        docId:
+        widget.shipmentId,
 
-      'paymentStatus':
-      'Completed',
-    });
+        amount:
+        totalWarehouseExpense,
+      );
 
-    await firestoreService
-        .addWarehouseExpense(
+      await firestoreService
+          .recalculateShipmentFinancials(
+        widget.shipmentId,
+      );
 
-      docId: widget.shipmentId,
+      await shipmentWorkflowService
+          .updateShipmentStatus(
 
-      amount: coldStorage,
-    );
+        shipmentId:
+        widget.shipmentId,
 
-    await firestoreService
-        .addFreightExpense(
+        status:
+        ShipmentStatus
+        .warehouseReceived
+        .label,
 
-      docId: widget.shipmentId,
+        note:
+        warehouseNotesController
+            .text
+            .trim(),
+      );
 
-      amount: freight,
-    );
-
-    await firestoreService
-        .addAirportHandlingExpense(
-
-      docId: widget.shipmentId,
-
-      amount: airport,
-    );
-
-    await firestoreService
-        .recalculateShipmentFinancials(
-      widget.shipmentId,
-    );
-
-    if (context.mounted) {
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context)
           .showSnackBar(
 
         const SnackBar(
+
+          backgroundColor:
+          Colors.green,
+
           content: Text(
-            "Shipment completed successfully",
+            "Shipment moved to transit successfully",
           ),
         ),
       );
 
       Navigator.pop(context);
+
+    } catch (e) {
+
+      _error(
+        "Failed: $e",
+      );
+
+    } finally {
+
+      if (mounted) {
+
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
 
@@ -197,14 +169,21 @@ class _WarehouseProcessingScreenState
         .showSnackBar(
 
       SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(message),
+
+        backgroundColor:
+        Colors.red,
+
+        content:
+        Text(message),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final meatItems =
+        shipment?['meatItems'] ?? [];
 
     return Scaffold(
 
@@ -213,22 +192,38 @@ class _WarehouseProcessingScreenState
 
       appBar: AppBar(
 
-        backgroundColor: Colors.white,
+        backgroundColor:
+        Colors.white,
 
         elevation: 0,
 
         title: const Text(
-          "Warehouse Operations",
+
+          "Warehouse Processing",
+
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
+
+            color:
+            Color(0xFF0F172A),
+
+            fontWeight:
+            FontWeight.bold,
           ),
         ),
       ),
 
-      body: SingleChildScrollView(
+      body:
+      shipment == null
 
-        padding: const EdgeInsets.all(20),
+          ? const Center(
+        child:
+        CircularProgressIndicator(),
+      )
+
+          : SingleChildScrollView(
+
+        padding:
+        const EdgeInsets.all(20),
 
         child: Column(
 
@@ -239,64 +234,105 @@ class _WarehouseProcessingScreenState
 
             const Text(
 
-              "Warehouse Completion",
+              "Received Meat Items",
 
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+
+                fontSize: 22,
+
+                fontWeight:
+                FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
 
-            const Text(
+            ...List.generate(
+              meatItems.length,
+                  (index) {
 
-              "Finalize shipment operational and logistics information before completion.",
+                final item =
+                meatItems[index];
 
-              style: TextStyle(
-                color: Color(0xFF64748B),
-                height: 1.5,
-              ),
+                return Container(
+
+                  margin:
+                  const EdgeInsets.only(
+                    bottom: 14,
+                  ),
+
+                  padding:
+                  const EdgeInsets.all(
+                    16,
+                  ),
+
+                  decoration:
+                  BoxDecoration(
+
+                    color:
+                    Colors.white,
+
+                    borderRadius:
+                    BorderRadius.circular(
+                      18,
+                    ),
+                  ),
+
+                  child: Row(
+
+                    children: [
+
+                      Expanded(
+
+                        child: Text(
+
+                          item['name'] ??
+                              '',
+
+                          style:
+                          const TextStyle(
+
+                            fontWeight:
+                            FontWeight.bold,
+
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+
+                      Text(
+
+                        "${item['weight']} KG",
+
+                        style:
+                        const TextStyle(
+
+                          color:
+                          Colors.blue,
+
+                          fontWeight:
+                          FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 30),
 
             _field(
-              coldStorageController,
-              "Cold Storage Cost",
-              Icons.ac_unit_rounded,
-            ),
-
-            _field(
-              freightController,
-              "Freight Cost",
-              Icons.flight_takeoff_rounded,
-            ),
-
-            _field(
-              airportController,
-              "Airport Handling Cost",
-              Icons.local_shipping_outlined,
-            ),
-
-            _field(
-              netWeightController,
-              "Net Sale Weight",
-              Icons.scale_rounded,
-            ),
-
-            _field(
-              damagedController,
-              "Damaged Stock",
-              Icons.warning_amber_rounded,
-            ),
-
-            _field(
-              notesController,
+              warehouseNotesController,
               "Warehouse Notes",
               Icons.description_outlined,
               maxLines: 5,
+            ),
+
+            _field(
+              warehouseCostController,
+              "Warehouse Cost",
+              Icons.payments_outlined,
             ),
 
             const SizedBox(height: 30),
@@ -308,7 +344,9 @@ class _WarehouseProcessingScreenState
               child: ElevatedButton(
 
                 onPressed:
-                loading ? null : _submit,
+                loading
+                    ? null
+                    : _submit,
 
                 style:
                 ElevatedButton.styleFrom(
@@ -318,14 +356,15 @@ class _WarehouseProcessingScreenState
 
                   padding:
                   const EdgeInsets.symmetric(
-                    vertical: 16,
+                    vertical: 18,
                   ),
 
                   shape:
                   RoundedRectangleBorder(
+
                     borderRadius:
                     BorderRadius.circular(
-                      16,
+                      18,
                     ),
                   ),
                 ),
@@ -340,19 +379,26 @@ class _WarehouseProcessingScreenState
 
                   child:
                   CircularProgressIndicator(
-                    color: Colors.white,
+
+                    color:
+                    Colors.white,
+
                     strokeWidth: 2,
                   ),
                 )
 
                     : const Text(
 
-                  "Complete Shipment",
+                  "Move To Transit",
 
                   style: TextStyle(
-                    color: Colors.white,
+
+                    color:
+                    Colors.white,
+
                     fontWeight:
                     FontWeight.bold,
+
                     fontSize: 16,
                   ),
                 ),
@@ -374,30 +420,42 @@ class _WarehouseProcessingScreenState
     return Padding(
 
       padding:
-      const EdgeInsets.only(bottom: 18),
+      const EdgeInsets.only(
+        bottom: 18,
+      ),
 
       child: TextField(
 
-        controller: controller,
+        controller:
+        controller,
 
-        maxLines: maxLines,
+        maxLines:
+        maxLines,
 
-        decoration: InputDecoration(
+        decoration:
+        InputDecoration(
 
-          labelText: label,
+          labelText:
+          label,
 
-          prefixIcon: Icon(icon),
+          prefixIcon:
+          Icon(icon),
 
           filled: true,
 
-          fillColor: Colors.white,
+          fillColor:
+          Colors.white,
 
-          border: OutlineInputBorder(
+          border:
+          OutlineInputBorder(
 
             borderRadius:
-            BorderRadius.circular(18),
+            BorderRadius.circular(
+              18,
+            ),
 
-            borderSide: BorderSide.none,
+            borderSide:
+            BorderSide.none,
           ),
         ),
       ),

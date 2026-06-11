@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import '../shipment/create_shipment_screen.dart';
 import 'archived_shipments_screen.dart';
@@ -246,7 +246,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       /// ================= BODY =================
 
       body: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(16),
 
         child: Column(
           children: [
@@ -309,9 +309,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
               builder: (context, snapshot) {
 
                 final data = snapshot.data ?? [];
-
-                final attentionService =
-                ShipmentAttentionService();
 
                 final total =
                     data.length;
@@ -409,68 +406,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           MaterialPageRoute(
 
             builder: (_) => ShipmentDetailScreen(
-
-              shipment: {
-
-                'shipmentCode': s.shipmentCode,
-
-                'status': s.status,
-
-                'origin': s.origin,
-
-                'destination': s.destination,
-
-                'nextAction': s.nextAction,
-
-                'purchaseCost': s.purchaseCost,
-
-                'salePrice': s.salePrice,
-
-                'weight': s.weight,
-
-                'paymentStatus': s.paymentStatus,
-
-                'purchaseWeight': s.purchaseWeight,
-
-                'carcassWeight': s.carcassWeight,
-
-                'netSaleWeight': s.netSaleWeight,
-
-                'slaughterhouseCost':
-                data['slaughterhouseCost'] ?? 0,
-
-                'coldStorageCost':
-                data['coldStorageCost'] ?? 0,
-
-                'freightCost':
-                data['freightCost'] ?? 0,
-
-                'airportHandlingCost':
-                data['airportHandlingCost'] ?? 0,
-
-                'totalPaid':
-                data['totalPaid'] ?? 0,
-
-                'outstandingBalance':
-                data['outstandingBalance'] ?? 0,
-
-                'paymentStatus':
-                data['paymentStatus'] ?? 'Pending',
-
-                'paymentDueDate':
-                data['paymentDueDate'],
-
-                'paymentReceivedDate':
-                data['paymentReceivedDate'],
-
-                'notes': s.notes,
-
-                'timeline': data['timeline'] ?? [],
-
-                'expenses': data['expenses'] ?? [],
-
-                'activityLogs': data['activityLogs'] ?? [],
-              },
+              shipmentId: s.firestoreId!,
             ),
           ),
         );
@@ -614,7 +550,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                           s.firestoreId!,
                         );
 
-                        if (context.mounted) {
+                        if (mounted) {
 
                           ScaffoldMessenger.of(context)
                               .showSnackBar(

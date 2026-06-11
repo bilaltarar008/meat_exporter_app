@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
 class AppTheme {
 
-  /// ================= LIGHT =================
+  /// LIGHT THEME
 
   static ThemeData lightTheme = ThemeData(
+
+    useMaterial3: true,
 
     brightness: Brightness.light,
 
@@ -24,6 +27,7 @@ class AppTheme {
     ),
 
     cardTheme: CardThemeData(
+
       color: AppColors.lightCard,
 
       shape: RoundedRectangleBorder(
@@ -50,9 +54,11 @@ class AppTheme {
     ),
   );
 
-  /// ================= DARK =================
+  /// DARK THEME
 
   static ThemeData darkTheme = ThemeData(
+
+    useMaterial3: true,
 
     brightness: Brightness.dark,
 
@@ -65,6 +71,7 @@ class AppTheme {
     ),
 
     cardTheme: CardThemeData(
+
       color: AppColors.darkCard,
 
       shape: RoundedRectangleBorder(

@@ -21,16 +21,7 @@ class ShipmentFirestoreService {
 
   Future<void> createShipment({
 
-    required double salePrice,
-
-    required DateTime? paymentDueDate,
-
-    required double totalPaid,
-
-    required double outstandingBalance,
-
-    required String paymentStatus,
-
+    required double totalPayment,
     required String shipmentCode,
 
     required String originCountry,
@@ -94,19 +85,7 @@ class ShipmentFirestoreService {
         'slaughterhouse': slaughterhouse,
         'destinationWarehouse': destinationWarehouse,
 
-        'salePrice': salePrice,
-
-        'paymentDueDate':
-        paymentDueDate,
-
-        'totalPaid':
-        totalPaid,
-
-        'outstandingBalance':
-        outstandingBalance,
-
-        'paymentStatus':
-        paymentStatus,
+        'totalPayment': totalPayment,
 
         /// PURCHASE
         'supplier': supplier,
@@ -167,7 +146,7 @@ class ShipmentFirestoreService {
         ],
 
         /// CUTS
-        'cuts': [],
+        'meatItems': [],
 
         /// EXPENSES
         'expenses': [
@@ -334,14 +313,14 @@ class ShipmentFirestoreService {
     final currentPaid =
     (data['totalPaid'] ?? 0).toDouble();
 
-    final salePrice =
-    (data['salePrice'] ?? 0).toDouble();
+    final totalPayment =
+    (data['totalPayment'] ?? 0).toDouble();
 
     final newPaid =
         currentPaid + amount;
 
     final outstanding =
-        salePrice - newPaid;
+        totalPayment - newPaid;
 
     final isCompleted =
         outstanding <= 0;
@@ -807,7 +786,7 @@ class ShipmentFirestoreService {
       'margin': 0,
 
 
-      'salePrice':
+      'totalPayment':
       shipment.salePrice,
 
       'weight':
@@ -848,7 +827,7 @@ class ShipmentFirestoreService {
       'purchaseCost':
       shipment.purchaseCost,
 
-      'salePrice':
+      'totalPayment':
       shipment.salePrice,
 
       'weight':
@@ -959,7 +938,7 @@ class ShipmentFirestoreService {
     }
 
     final revenue =
-    (data['salePrice'] ?? 0).toDouble();
+    (data['totalPayment'] ?? 0).toDouble();
 
     final profit =
         revenue - totalExpenses;

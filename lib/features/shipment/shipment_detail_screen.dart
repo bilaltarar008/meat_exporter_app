@@ -3,900 +3,360 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ShipmentDetailScreen extends StatelessWidget {
 
-  final Map<String, dynamic> shipment;
+  final String shipmentId;
 
   const ShipmentDetailScreen({
     super.key,
-    required this.shipment,
+    required this.shipmentId,
   });
 
   @override
   Widget build(BuildContext context) {
 
-    final double purchaseCost =
-    (shipment['purchaseCost'] ?? 0).toDouble();
+    return StreamBuilder<DocumentSnapshot>(
 
-    final double salePrice =
-    (shipment['salePrice'] ?? 0).toDouble();
+      stream: FirebaseFirestore.instance
+          .collection('shipments')
+          .doc(shipmentId)
+          .snapshots(),
 
-    final double weight =
-    (shipment['weight'] ?? 0).toDouble();
+      builder: (context, snapshot) {
 
-    final double slaughterhouseCost =
-    (shipment['slaughterhouseCost'] ?? 0).toDouble();
+        if (!snapshot.hasData) {
 
-    final double coldStorageCost =
-    (shipment['coldStorageCost'] ?? 0).toDouble();
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-    final double freightCost =
-    (shipment['freightCost'] ?? 0).toDouble();
+        final shipment =
+        snapshot.data!.data()
+        as Map<String, dynamic>;
 
-    final double airportHandlingCost =
-    (shipment['airportHandlingCost'] ?? 0).toDouble();
+        final double purchaseCost =
+        (shipment['purchaseCost'] ?? 0)
+            .toDouble();
 
-    final totalOperationalCost =
-        purchaseCost +
-            slaughterhouseCost +
-            coldStorageCost +
-            freightCost +
-            airportHandlingCost;
+        final double weight =
+        (shipment['carcassWeight'] ?? 0)
+            .toDouble();
 
-    final profit =
-        salePrice -
-            totalOperationalCost;
+        final List meatItems =
+            shipment['meatItems'] ?? [];
 
-    final double totalPaid =
-    (shipment['totalPaid'] ?? 0).toDouble();
+        final double slaughterhouseCost =
+        (shipment['slaughterhouseCost'] ?? 0)
+            .toDouble();
 
-    final double outstandingBalance =
-        salePrice - totalPaid;
+        final double coldStorageCost =
+        (shipment['coldStorageCost'] ?? 0)
+            .toDouble();
 
-    final paymentStatus =
-        shipment['paymentStatus'] ?? 'Pending';
+        final double freightCost =
+        (shipment['freightCost'] ?? 0)
+            .toDouble();
 
-    DateTime? paymentDueDate;
+        final double airportHandlingCost =
+        (shipment['airportHandlingCost'] ?? 0)
+            .toDouble();
 
-    final rawDueDate =
-    shipment['paymentDueDate'];
+        final double totalOperationalCost =
+            purchaseCost +
+                slaughterhouseCost +
+                coldStorageCost +
+                freightCost +
+                airportHandlingCost;
 
-    if (rawDueDate != null) {
+        return Scaffold(
 
-      if (rawDueDate is Timestamp) {
+          backgroundColor:
+          const Color(0xFFF3F4F6),
 
-        paymentDueDate =
-            rawDueDate.toDate();
+          appBar: AppBar(
 
-      } else if (rawDueDate is DateTime) {
+            elevation: 0,
 
-        paymentDueDate =
-            rawDueDate;
-      }
-    }
+            backgroundColor: Colors.white,
 
-    final paymentPending =
-        paymentStatus
-            .toString()
-            .toLowerCase() != 'completed';
+            foregroundColor: Colors.black,
 
-    final isOverdue =
-        paymentDueDate != null &&
-            DateTime.now().isAfter(paymentDueDate!) &&
-            paymentPending;
-
-    return Scaffold(
-
-      backgroundColor: const Color(0xFFF3F4F6),
-
-      appBar: AppBar(
-
-        elevation: 0,
-
-        backgroundColor: Colors.white,
-
-        foregroundColor: Colors.black,
-
-        title: Text(
-
-          shipment['shipmentCode'] ?? "Shipment",
-
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+            title: Text(
+              shipment['shipmentCode']
+                  ?? "Shipment",
+            ),
           ),
-        ),
-      ),
 
-      body: SingleChildScrollView(
+          body: SingleChildScrollView(
 
-        padding: const EdgeInsets.all(16),
+            padding:
+            const EdgeInsets.all(16),
 
-        child: Column(
+            child: Column(
 
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
 
-          children: [
+              children: [
 
-            /// HEADER
+                /// HEADER
 
-            Container(
+                Container(
 
-              width: double.infinity,
+                  width: double.infinity,
 
-              padding: const EdgeInsets.all(20),
+                  padding:
+                  const EdgeInsets.all(20),
 
-              decoration: BoxDecoration(
+                  decoration: BoxDecoration(
 
-                color: Colors.white,
+                    color: Colors.white,
 
-                borderRadius:
-                BorderRadius.circular(24),
-              ),
+                    borderRadius:
+                    BorderRadius.circular(24),
+                  ),
 
-              child: Column(
-
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-
-                children: [
-
-                  Row(
+                  child: Column(
 
                     crossAxisAlignment:
                     CrossAxisAlignment.start,
 
                     children: [
 
-                      Expanded(
-
-                        child: Column(
-
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-
-                          children: [
-
-                            Text(
-
-                              shipment['shipmentCode'] ??
-                                  "Shipment",
-
-                              style: const TextStyle(
-
-                                fontSize: 28,
-
-                                fontWeight:
-                                FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Text(
-
-                              "${shipment['originCity'] ?? ''}, ${shipment['originCountry'] ?? ''}"
-                                  " → "
-                                  "${shipment['destinationCity'] ?? ''}, ${shipment['destinationCountry'] ?? ''}",
-
-                              style: const TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      _statusChip(
-                        shipment['status'] ?? '',
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  if (isOverdue)
-
-                    Container(
-
-                      width: double.infinity,
-
-                      margin: const EdgeInsets.only(top: 14),
-
-                      padding: const EdgeInsets.all(16),
-
-                      decoration: BoxDecoration(
-
-                        color: Colors.red.withValues(alpha: 0.08),
-
-                        borderRadius:
-                        BorderRadius.circular(16),
-
-                        border: Border.all(
-                          color: Colors.red.shade200,
-                        ),
-                      ),
-
-                      child: Row(
+                      Row(
 
                         children: [
 
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.red,
-                          ),
-
-                          const SizedBox(width: 12),
-
                           Expanded(
 
-                            child: Text(
+                            child: Column(
 
-                              "Payment is overdue. Immediate action required.",
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
 
-                              style: TextStyle(
+                              children: [
 
-                                color: Colors.red.shade700,
+                                Text(
 
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  shipment['shipmentCode']
+                                      ?? "Shipment",
+
+                                  style:
+                                  const TextStyle(
+
+                                    fontSize: 28,
+
+                                    fontWeight:
+                                    FontWeight.bold,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Text(
+
+                                  "${shipment['originCity'] ?? 'N/A'}, "
+                                      "${shipment['originCountry'] ?? 'N/A'}"
+                                      "  →  "
+                                      "${shipment['destinationCity'] ?? 'N/A'}, "
+                                      "${shipment['destinationCountry'] ?? 'N/A'}",
+
+                                  style:
+                                  const TextStyle(
+
+                                    color: Colors.grey,
+
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+
+                          _statusChip(
+                            shipment['status'] ?? '',
                           ),
                         ],
                       ),
-                    ),
 
-                  Container(
+                      const SizedBox(height: 24),
 
-                    width: double.infinity,
-
-                    padding: const EdgeInsets.all(16),
-
-                    decoration: BoxDecoration(
-
-                      color:
-                      const Color(0xFFFFF7ED),
-
-                      borderRadius:
-                      BorderRadius.circular(16),
-                    ),
-
-                    child: Column(
-
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                      children: [
-
-                        const Text(
-
-                          "Next Action",
-
-                          style: TextStyle(
-
-                            color: Colors.orange,
-
-                            fontWeight:
-                            FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        Text(
-
-                          shipment['nextAction'] ??
-                              '',
-
-                          style: const TextStyle(
-
-                            fontWeight:
-                            FontWeight.w600,
-
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-
-                    children: [
-
-                      Expanded(
-                        child: _metricCard(
-                          "Purchase",
-                          "\$${purchaseCost.toStringAsFixed(0)}",
-                          Icons.shopping_cart_outlined,
-                          Colors.orange,
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      Expanded(
-                        child: _metricCard(
-                          "Sale",
-                          "\$${salePrice.toStringAsFixed(0)}",
-                          Icons.attach_money,
-                          Colors.blue,
-                        ),
+                      _buildMeatSection(
+                        meatItems,
+                        weight,
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 24),
 
-                  Row(
+                const Text(
 
-                    children: [
+                  "Shipment Timeline",
 
-                      Expanded(
-                        child: _metricCard(
-                          "Weight",
-                          "${weight.toStringAsFixed(0)} kg",
-                          Icons.scale,
-                          Colors.green,
-                        ),
-                      ),
+                  style: TextStyle(
 
-                      const SizedBox(width: 10),
+                    fontSize: 20,
 
-                      Expanded(
-                        child: _metricCard(
-                          "Profit",
-                          "\$${profit.toStringAsFixed(0)}",
-                          Icons.trending_up,
-                          profit >= 0
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                      ),
-                    ],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildFirestoreTimeline(
+                  shipment,
+                ),
+
+                const SizedBox(height: 24),
+
+                const Text(
+
+                  "Operational Expenses",
+
+                  style: TextStyle(
+
+                    fontSize: 20,
+
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildExpenseCard(
+                  "Animal Purchase",
+                  purchaseCost,
+                  Icons.shopping_cart_outlined,
+                  Colors.orange,
+                ),
+
+                _buildExpenseCard(
+                  "Slaughterhouse",
+                  slaughterhouseCost,
+                  Icons.cut,
+                  Colors.red,
+                ),
+
+
+
+                Container(
+
+                  width: double.infinity,
+
+                  padding:
+                  const EdgeInsets.all(18),
+
+                  decoration: BoxDecoration(
+
+                    color: Colors.white,
+
+                    borderRadius:
+                    BorderRadius.circular(18),
                   ),
 
-                  const SizedBox(height: 20),
-
-                  Container(
-
-                    padding: const EdgeInsets.all(16),
-
-                    decoration: BoxDecoration(
-
-                      color: paymentPending
-                          ? Colors.orange.withValues(alpha: 0.08)
-                          : Colors.green.withOpacity(0.08),
-
-                      borderRadius:
-                      BorderRadius.circular(16),
-                    ),
-
-                    child: Row(
-
-                      children: [
-
-                        Icon(
-
-                          paymentPending
-                              ? Icons.pending_actions
-                              : Icons.check_circle,
-
-                          color: paymentPending
-                              ? Colors.orange
-                              : Colors.green,
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-
-                          child: Text(
-
-                            paymentPending
-                                ? "Payment Pending"
-                                : "Payment Completed",
-
-                            style: TextStyle(
-
-                              fontWeight:
-                              FontWeight.bold,
-
-                              color: paymentPending
-                                  ? Colors.orange
-                                  : Colors.green,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            /// PAYMENT SUMMARY
-
-            const Text(
-
-              "Payment Summary",
-
-              style: TextStyle(
-
-                fontSize: 20,
-
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Container(
-
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(18),
-
-              decoration: BoxDecoration(
-
-                color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(20),
-              ),
-
-              child: Column(
-
-                children: [
-
-                  _paymentRow(
-                    "Total Sale",
-                    "\$${salePrice.toStringAsFixed(0)}",
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _paymentRow(
-                    "Advance Received",
-                    "\$${totalPaid.toStringAsFixed(0)}",
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _paymentRow(
-                    "Outstanding Balance",
-                    "\$${outstandingBalance.toStringAsFixed(0)}",
-                    valueColor:
-                    outstandingBalance > 0
-                        ? Colors.red
-                        : Colors.green,
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _paymentRow(
-
-                    "Payment Status",
-
-                    paymentStatus,
-
-                    valueColor:
-
-                    paymentStatus == 'Completed'
-
-                        ? Colors.green
-
-                        : paymentStatus == 'Overdue'
-
-                        ? Colors.red
-
-                        : Colors.orange,
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _paymentRow(
-
-                    "Due Date",
-
-                    paymentDueDate == null
-
-                        ? "Not Scheduled"
-
-                        :
-
-                    "${paymentDueDate.day}/${paymentDueDate.month}/${paymentDueDate.year}",
-                  ),
-                ],
-              ),
-            ),
-
-            /// TIMELINE
-
-            const Text(
-
-              "Shipment Timeline",
-
-              style: TextStyle(
-
-                fontSize: 20,
-
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildFirestoreTimeline(),
-
-            const SizedBox(height: 24),
-
-            /// WEIGHTS
-
-            const Text(
-
-              "Weights & Cuts",
-
-              style: TextStyle(
-
-                fontSize: 20,
-
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            _infoCard(
-              "Purchase Weight",
-              "${shipment['purchaseWeight'] ?? 0} kg",
-            ),
-
-            _infoCard(
-              "Carcass Weight",
-              "${shipment['carcassWeight'] ?? 0} kg",
-            ),
-
-            _infoCard(
-              "Net Sale Weight",
-              "${shipment['netSaleWeight'] ?? 0} kg",
-            ),
-
-            const SizedBox(height: 24),
-
-            /// EXPENSES
-
-            const Text(
-
-              "Operational Expenses",
-
-              style: TextStyle(
-
-                fontSize: 20,
-
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildExpenseCard(
-              "Animal Purchase",
-              purchaseCost,
-              Icons.shopping_cart_outlined,
-              Colors.orange,
-            ),
-
-            _buildExpenseCard(
-              "Slaughterhouse",
-              slaughterhouseCost,
-              Icons.cut,
-              Colors.red,
-            ),
-
-            _buildExpenseCard(
-              "Cold Storage",
-              coldStorageCost,
-              Icons.ac_unit,
-              Colors.blue,
-            ),
-
-            _buildExpenseCard(
-              "Freight Charges",
-              freightCost,
-              Icons.flight_takeoff,
-              Colors.green,
-            ),
-
-            _buildExpenseCard(
-              "Airport Handling",
-              airportHandlingCost,
-              Icons.local_shipping,
-              Colors.purple,
-            ),
-
-            const SizedBox(height: 18),
-            const SizedBox(height: 14),
-
-            Container(
-
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(18),
-
-              decoration: BoxDecoration(
-
-                color: profit >= 0
-
-                    ? Colors.green.withValues(alpha: 0.08)
-
-                    : Colors.red.withValues(alpha: 0.08),
-
-                borderRadius:
-                BorderRadius.circular(18),
-              ),
-
-              child: Column(
-
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-
-                children: [
-
-                  const Text(
-
-                    "Remaining Profit",
-
-                    style: TextStyle(
-
-                      fontWeight: FontWeight.bold,
-
-                      fontSize: 16,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Row(
+                  child: Row(
 
                     mainAxisAlignment:
                     MainAxisAlignment.spaceBetween,
 
                     children: [
 
-                      Expanded(
+                      const Text(
 
-                        child: Column(
+                        "Total Operational Cost",
 
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                        style: TextStyle(
 
-                          children: [
+                          fontWeight:
+                          FontWeight.bold,
 
-                            const Text(
-                              "Total Sale",
-                              style: TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-
-                              "\$${salePrice.toStringAsFixed(0)}",
-
-                              style: const TextStyle(
-
-                                fontWeight:
-                                FontWeight.bold,
-
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
+                          fontSize: 16,
                         ),
                       ),
 
-                      const Icon(
-                        Icons.remove,
-                        color: Colors.grey,
-                      ),
+                      Text(
 
-                      Expanded(
+                        "\$${totalOperationalCost.toStringAsFixed(0)}",
 
-                        child: Column(
+                        style: const TextStyle(
 
-                          crossAxisAlignment:
-                          CrossAxisAlignment.center,
+                          fontWeight:
+                          FontWeight.bold,
 
-                          children: [
+                          fontSize: 18,
 
-                            const Text(
-                              "Expenses",
-                              style: TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-
-                              "\$${totalOperationalCost.toStringAsFixed(0)}",
-
-                              style: const TextStyle(
-
-                                fontWeight:
-                                FontWeight.bold,
-
-                                fontSize: 18,
-
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.grey,
-                      ),
-
-                      Expanded(
-
-                        child: Column(
-
-                          crossAxisAlignment:
-                          CrossAxisAlignment.end,
-
-                          children: [
-
-                            const Text(
-                              "Net Profit",
-                              style: TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-
-                              "\$${profit.toStringAsFixed(0)}",
-
-                              style: TextStyle(
-
-                                fontWeight:
-                                FontWeight.bold,
-
-                                fontSize: 20,
-
-                                color:
-                                profit >= 0
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                          ],
+                          color: Colors.red,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            Container(
+                const SizedBox(height: 24),
 
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(18),
-
-              decoration: BoxDecoration(
-
-                color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(18),
-              ),
-
-              child: Row(
-
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-
-                children: [
+                if ((shipment['notes'] ?? '')
+                    .toString()
+                    .isNotEmpty) ...[
 
                   const Text(
 
-                    "Total Operational Cost",
+                    "Owner Notes",
 
                     style: TextStyle(
 
-                      fontWeight:
-                      FontWeight.bold,
+                      fontSize: 20,
 
-                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  Text(
+                  const SizedBox(height: 14),
 
-                    "\$${totalOperationalCost.toStringAsFixed(0)}",
+                  Container(
 
-                    style: const TextStyle(
+                    width: double.infinity,
 
-                      fontWeight:
-                      FontWeight.bold,
+                    padding: const EdgeInsets.all(20),
 
-                      fontSize: 18,
+                    decoration: BoxDecoration(
 
-                      color: Colors.red,
+                      color: Colors.white,
+
+                      borderRadius:
+                      BorderRadius.circular(18),
+                    ),
+
+                    child: Text(
+
+                      shipment['notes'],
+
+                      style: const TextStyle(
+
+                        fontSize: 15,
+
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            /// NOTES
-
-            const Text(
-
-              "Operational Notes",
-
-              style: TextStyle(
-
-                fontSize: 20,
-
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Container(
-
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(16),
-
-              decoration: BoxDecoration(
-
-                color: Colors.white,
-
-                borderRadius:
-                BorderRadius.circular(16),
-              ),
-
-              child: Text(
-
-                shipment['notes'] ??
-                    "No notes added",
-
-                style: const TextStyle(
-                  height: 1.5,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildFirestoreTimeline() {
+  /// =========================
+  /// TIMELINE
+  /// =========================
+
+  Widget _buildFirestoreTimeline(
+      Map<String, dynamic> shipment,
+      ) {
 
     final timeline =
         shipment['timeline'] ?? [];
@@ -924,10 +384,13 @@ class ShipmentDetailScreen extends StatelessWidget {
     return Column(
 
       children: List.generate(
+
         timeline.length,
+
             (index) {
 
-          final item = timeline[index];
+          final item =
+          timeline[index];
 
           return _timelineItem(
             item['title'] ?? '',
@@ -947,49 +410,284 @@ class ShipmentDetailScreen extends StatelessWidget {
 
     String formattedDate = '';
 
-    if (createdAt != null) {
+    if (createdAt != null &&
+        createdAt is Timestamp) {
 
-      DateTime date;
-
-      if (createdAt is Timestamp) {
-
-        date = createdAt.toDate();
-
-      } else {
-
-        date = DateTime.now();
-      }
+      final date =
+      createdAt.toDate();
 
       formattedDate =
-      "${date.day.toString().padLeft(2, '0')}/"
-          "${date.month.toString().padLeft(2, '0')}/"
-          "${date.year}  •  "
-          "${date.hour.toString().padLeft(2, '0')}:"
-          "${date.minute.toString().padLeft(2, '0')}";
+      "${date.day}/${date.month}/${date.year} • "
+          "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
     }
+
+    return SizedBox(
+
+      width: double.infinity,
+
+      child: Container(
+
+        margin:
+        const EdgeInsets.only(
+          bottom: 12,
+        ),
+
+        padding:
+        const EdgeInsets.all(16),
+
+        decoration: BoxDecoration(
+
+          color: Colors.white,
+
+          borderRadius:
+          BorderRadius.circular(16),
+        ),
+
+        child: Column(
+
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+
+          children: [
+
+            Text(
+
+              title,
+
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ) ,
+
+            const SizedBox(height: 6),
+
+            Text(subtitle),
+
+            const SizedBox(height: 8),
+
+            Text(
+
+              formattedDate,
+
+              style: const TextStyle(
+
+                color: Colors.grey,
+
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// EXPENSE CARD
+  /// =========================
+
+  Widget _buildExpenseCard(
+      String title,
+      double amount,
+      IconData icon,
+      Color color,
+      ) {
 
     return Container(
 
-      margin: const EdgeInsets.only(bottom: 12),
+      margin:
+      const EdgeInsets.only(
+        bottom: 12,
+      ),
 
-      padding: const EdgeInsets.all(16),
+      padding:
+      const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
 
         color: Colors.white,
 
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+        BorderRadius.circular(18),
       ),
 
       child: Row(
 
-        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Icon(
+            icon,
+            color: color,
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Text(title),
+          ),
+
+          Text(
+            "\$${amount.toStringAsFixed(0)}",
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// =========================
+  /// MEAT SECTION
+  /// =========================
+
+  Widget _buildMeatSection(
+      List meatItems,
+      double weight,
+      ) {
+
+    return Column(
+
+      children: [
+
+        _metricCard(
+          "Total Weight",
+          "${weight.toStringAsFixed(0)} kg",
+          Icons.scale,
+          Colors.green,
+        ),
+
+        const SizedBox(height: 16),
+
+        if (meatItems.isNotEmpty)
+
+          Column(
+
+            children: List.generate(
+              meatItems.length,
+                  (index) {
+
+                final item =
+                meatItems[index];
+
+                return Container(
+
+                  margin:
+                  const EdgeInsets.only(
+                    bottom: 10,
+                  ),
+
+                  padding:
+                  const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+
+                  decoration: BoxDecoration(
+
+                    color:
+                    const Color(0xFFF8FAFC),
+
+                    borderRadius:
+                    BorderRadius.circular(
+                      16,
+                    ),
+                  ),
+
+                  child: Row(
+
+                    children: [
+
+                      Expanded(
+
+                        child: Text(
+
+                          item['name'] ?? '',
+
+                          style:
+                          const TextStyle(
+
+                            fontSize: 15,
+
+                            fontWeight:
+                            FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      Text(
+
+                        "${item['weight']} KG",
+
+                        style:
+                        const TextStyle(
+
+                          color: Colors.green,
+
+                          fontWeight:
+                          FontWeight.bold,
+
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// =========================
+  /// METRIC CARD
+  /// =========================
+
+  Widget _metricCard(
+      String title,
+      String value,
+      IconData icon,
+      Color color,
+      ) {
+
+    return Container(
+
+      width: double.infinity,
+
+      padding: const EdgeInsets.all(18),
+
+      decoration: BoxDecoration(
+
+        color: Colors.white,
+
+        borderRadius:
+        BorderRadius.circular(18),
+      ),
+
+      child: Row(
 
         children: [
 
-          const CircleAvatar(
-            radius: 8,
-            backgroundColor: Colors.green,
+          Container(
+
+            padding:
+            const EdgeInsets.all(12),
+
+            decoration: BoxDecoration(
+
+              color:
+              color.withValues(
+                alpha: 0.10,
+              ),
+
+              borderRadius:
+              BorderRadius.circular(
+                14,
+              ),
+            ),
+
+            child: Icon(
+              icon,
+              color: color,
+            ),
           ),
 
           const SizedBox(width: 14),
@@ -1008,30 +706,22 @@ class ShipmentDetailScreen extends StatelessWidget {
                   title,
 
                   style: const TextStyle(
-
-                    fontWeight: FontWeight.bold,
-
-                    fontSize: 17,
+                    color: Colors.grey,
                   ),
                 ),
 
-                const SizedBox(height: 6),
-
-                Text(
-                  subtitle,
-                ),
-
-                const SizedBox(height: 10),
+                const SizedBox(height: 4),
 
                 Text(
 
-                  formattedDate,
+                  value,
 
                   style: const TextStyle(
 
-                    color: Colors.grey,
+                    fontWeight:
+                    FontWeight.bold,
 
-                    fontSize: 12,
+                    fontSize: 18,
                   ),
                 ),
               ],
@@ -1042,212 +732,45 @@ class ShipmentDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseCard(
-      String title,
-      double amount,
-      IconData icon,
-      Color color,
+  /// =========================
+  /// STATUS CHIP
+  /// =========================
+
+  Widget _statusChip(
+      String status,
       ) {
-
-    return Container(
-
-      margin:
-      const EdgeInsets.only(bottom: 12),
-
-      padding:
-      const EdgeInsets.all(16),
-
-      decoration: BoxDecoration(
-
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(18),
-      ),
-
-      child: Row(
-
-        children: [
-
-          Icon(icon, color: color),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Text(title),
-          ),
-
-          Text(
-            "\$${amount.toStringAsFixed(0)}",
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _metricCard(
-      String title,
-      String value,
-      IconData icon,
-      Color color,
-      ) {
-
-    return Container(
-
-      padding: const EdgeInsets.all(16),
-
-      decoration: BoxDecoration(
-
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(18),
-      ),
-
-      child: Column(
-
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-
-        children: [
-
-          Icon(icon, color: color),
-
-          const SizedBox(height: 14),
-
-          Text(title),
-
-          const SizedBox(height: 6),
-
-          Text(
-
-            value,
-
-            style: const TextStyle(
-
-              fontWeight:
-              FontWeight.bold,
-
-              fontSize: 18,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoCard(
-      String title,
-      String value,
-      ) {
-
-    return Container(
-
-      margin:
-      const EdgeInsets.only(bottom: 12),
-
-      padding:
-      const EdgeInsets.all(16),
-
-      decoration: BoxDecoration(
-
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(16),
-      ),
-
-      child: Row(
-
-        mainAxisAlignment:
-        MainAxisAlignment.spaceBetween,
-
-        children: [
-
-          Text(title),
-
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentRow(
-      String title,
-      String value, {
-        Color? valueColor,
-      }) {
-
-    return Row(
-
-      mainAxisAlignment:
-      MainAxisAlignment.spaceBetween,
-
-      children: [
-
-        Text(
-
-          title,
-
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
-        ),
-
-        Text(
-
-          value,
-
-          style: TextStyle(
-
-            fontWeight: FontWeight.bold,
-
-            fontSize: 15,
-
-            color:
-            valueColor ??
-                Colors.black,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statusChip(String status) {
-
-    Color bg = Colors.blue.withValues(alpha: 0.1);
-    Color text = Colors.blue;
-
-    if (status.toLowerCase().contains("completed")) {
-
-      bg = Colors.green.withValues(alpha: 0.1);
-
-      text = Colors.green;
-    }
 
     return Container(
 
       padding:
       const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
+        horizontal: 14,
+        vertical: 8,
       ),
 
       decoration: BoxDecoration(
 
-        color: bg,
+        color:
+        Colors.blue.withValues(
+          alpha: 0.10,
+        ),
 
         borderRadius:
-        BorderRadius.circular(30),
+        BorderRadius.circular(
+          30,
+        ),
       ),
 
       child: Text(
 
         status,
 
-        style: TextStyle(
-          color: text,
-          fontWeight: FontWeight.w600,
+        style: const TextStyle(
+
+          color: Colors.blue,
+
+          fontWeight:
+          FontWeight.w600,
         ),
       ),
     );

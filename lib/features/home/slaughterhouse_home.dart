@@ -4,6 +4,7 @@ import '../shipment/slaughterhouse_processing_screen.dart';
 import '../../core/database/app_database.dart';
 import '../../core/services/firestore_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SlaughterhouseHomeScreen extends StatefulWidget {
   const SlaughterhouseHomeScreen({super.key});
@@ -58,14 +59,72 @@ class _SlaughterhouseHomeScreenState
           ),
 
           IconButton(
+
+            onPressed: () async {
+
+              final shouldLogout =
+              await showDialog<bool>(
+
+                context: context,
+
+                builder: (dialogContext) {
+
+                  return AlertDialog(
+
+                    title: const Text(
+                      "Logout",
+                    ),
+
+                    content: const Text(
+                      "Are you sure you want to logout?",
+                    ),
+
+                    actions: [
+
+                      TextButton(
+
+                        onPressed: () {
+
+                          Navigator.pop(
+                            dialogContext,
+                            false,
+                          );
+                        },
+
+                        child: const Text(
+                          "Cancel",
+                        ),
+                      ),
+
+                      ElevatedButton(
+
+                        onPressed: () {
+
+                          Navigator.pop(
+                            dialogContext,
+                            true,
+                          );
+                        },
+
+                        child: const Text(
+                          "Logout",
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              if (shouldLogout == true) {
+
+                await FirebaseAuth.instance.signOut();
+              }
+            },
+
             icon: const Icon(
-              Icons.logout,
+              Icons.logout_rounded,
               color: Colors.red,
             ),
-
-            onPressed: () {
-              FirebaseAuth.instance.signOut();
-            },
           ),
         ],
       ),

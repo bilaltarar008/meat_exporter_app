@@ -1,36 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../core/database/app_database.dart';
-import '../../core/services/firestore_provider.dart';import '../shipment/warehouse_processing_screen.dart';import 'package:cloud_firestore/cloud_firestore.dart';
+import '../shipment/shipment_detail_screen.dart';
+import '../shipment/warehouse_processing_screen.dart';
 
 class WarehouseHomeScreen extends StatelessWidget {
-  const WarehouseHomeScreen({super.key});
+
+  const WarehouseHomeScreen({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
 
-    const bgColor = Color(0xFFF8FAFC);
-    const green = Color(0xFF16A34A);
-    const blue = Color(0xFF2563EB);
-
     return Scaffold(
 
-      backgroundColor: bgColor,
+      backgroundColor:
+      const Color(0xFFF5F7FB),
 
       appBar: AppBar(
 
-        elevation: 0,
-
         backgroundColor: Colors.white,
 
+        elevation: 0,
+
         title: const Text(
+
           "Warehouse Operations",
 
           style: TextStyle(
+
             color: Color(0xFF0F172A),
+
             fontWeight: FontWeight.bold,
+
+            fontSize: 20,
           ),
         ),
 
@@ -38,459 +43,735 @@ class WarehouseHomeScreen extends StatelessWidget {
 
           IconButton(
 
+            onPressed: () {
+
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+
+                const SnackBar(
+
+                  content: Text(
+                    "Notifications coming soon",
+                  ),
+                ),
+              );
+            },
+
             icon: const Icon(
               Icons.notifications_none_rounded,
               color: Color(0xFF0F172A),
             ),
-
-            onPressed: () {},
           ),
 
           IconButton(
 
+            onPressed: () async {
+
+              final shouldLogout =
+              await showDialog<bool>(
+
+                context: context,
+
+                builder: (dialogContext) {
+
+                  return AlertDialog(
+
+                    title: const Text(
+                      "Logout",
+                    ),
+
+                    content: const Text(
+                      "Are you sure you want to logout?",
+                    ),
+
+                    actions: [
+
+                      TextButton(
+
+                        onPressed: () {
+
+                          Navigator.pop(
+                            dialogContext,
+                            false,
+                          );
+                        },
+
+                        child: const Text(
+                          "Cancel",
+                        ),
+                      ),
+
+                      ElevatedButton(
+
+                        onPressed: () {
+
+                          Navigator.pop(
+                            dialogContext,
+                            true,
+                          );
+                        },
+
+                        child: const Text(
+                          "Logout",
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              if (shouldLogout == true) {
+
+                await FirebaseAuth.instance.signOut();
+              }
+            },
+
             icon: const Icon(
-              Icons.logout,
+              Icons.logout_rounded,
               color: Colors.red,
             ),
-
-            onPressed: () =>
-                FirebaseAuth.instance.signOut(),
           ),
         ],
+
       ),
 
-      body:
-      StreamBuilder<List<Map<String, dynamic>>>(
+      body: StreamBuilder<QuerySnapshot>(
 
-        stream:
-        firestoreService
-            .watchWarehouseShipments(),
+        stream: FirebaseFirestore.instance
+            .collection('shipments')
+            .snapshots(),
 
         builder: (context, snapshot) {
 
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
+          if (!snapshot.hasData) {
 
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
 
-          if (snapshot.hasError) {
+          final allDocs =
+              snapshot.data!.docs;
 
-            return Center(
-              child: Text(
-                snapshot.error.toString(),
-              ),
-            );
-          }
+          /// =========================
+          /// INCOMING
+          /// =========================
 
-          final firestoreShipments =
-              snapshot.data ?? [];
+          final incomingDocs =
+          allDocs.where((doc) {
 
-          final shipments =
-          firestoreShipments.map((data) {
+            final shipment =
+            doc.data()
+            as Map<String, dynamic>;
 
-            return Shipment(
-
-              blocked:
-              data['blocked'] ?? false,
-
-              blockedReason:
-              data['blockedReason'] ?? '',
-
-              totalPaid:
-              (data['totalPaid'] ?? 0).toDouble(),
-
-              id: 0,
-
-              title: data['title'] ?? '',
-
-              shipmentCode:
-              data['shipmentCode'],
-
-              origin:
-              data['originCountry'] ?? 'Pakistan',
-
-              destination:
-              data['destinationCountry'] ?? 'Dubai',
-
-              slaughterhouse:
-              data['slaughterhouse'],
-
-              freightForwarder:
-              data['freightForwarder'],
-
-              airline:
-              data['airline'],
-
-              destinationWarehouse:
-              data['destinationWarehouse'],
-
-              supplier:
-              data['supplier'],
-
-              buyer:
-              data['buyer'],
-
-              animalType:
-              data['animalType'],
-
-              quantity:
-              (data['quantity'] ?? 0).toDouble(),
-
-              purchaseWeight:
-              (data['purchaseWeight'] ?? 0).toDouble(),
-
-              carcassWeight:
-              (data['carcassWeight'] ?? 0).toDouble(),
-
-              netSaleWeight:
-              (data['netSaleWeight'] ?? 0).toDouble(),
-
-              nextAction:
-              data['nextAction'] ??
-                  'Continue Processing',
-
-              paymentStatus:
-              data['paymentStatus'] ?? 'pending',
-
-              paymentDue:
-              data['paymentDueDate'] != null
-                  ? (data['paymentDueDate'] as Timestamp).toDate()
-                  : null,
-
-              paymentReceivedDate:
-              data['paymentReceivedDate'] != null
-                  ? (data['paymentReceivedDate'] as Timestamp).toDate()
-                  : null,
-
-              outstandingBalance:
-              (data['outstandingBalance'] ?? 0).toDouble(),
-
-              purchaseCost:
-              (data['purchaseCost'] ?? 0).toDouble(),
-
-              salePrice:
-              (data['salePrice'] ?? 0).toDouble(),
-
-              slaughterhouseCost:
-              (data['slaughterhouseCost'] ?? 0).toDouble(),
-
-              coldStorageCost:
-              (data['coldStorageCost'] ?? 0).toDouble(),
-
-              freightCost:
-              (data['freightCost'] ?? 0).toDouble(),
-
-              airportHandlingCost:
-              (data['airportHandlingCost'] ?? 0).toDouble(),
-
-              weight:
-              (data['purchaseWeight'] ?? 0).toDouble(),
-
-              awbNumber:
-              data['awbNumber'],
-
-              flightNumber:
-              data['flightNumber'],
-
-              departureDate: null,
-
-              arrivalDate: null,
-
-              notes:
-              data['notes'],
-
-              status:
-              data['status'] ?? '',
-
-              currentStage:
-              data['currentStage'] ?? 'owner',
-
-              slaughterDone: false,
-
-              warehouseDone: false,
-
-              firestoreId:
-              data['id'],
-
-              synced: true,
-
-              updatedAt: DateTime.now(),
-
-              archived:
-              data['archived'] ?? false,
-            );
+            return shipment['currentStage']
+                == 'slaughterhouse';
 
           }).toList();
 
-          if (shipments.isEmpty) {
+          /// =========================
+          /// IN WAREHOUSE
+          /// =========================
 
-            return const Center(
-              child: Text(
-                "No warehouse shipments",
-              ),
-            );
+          final warehouseDocs =
+          allDocs.where((doc) {
+
+            final shipment =
+            doc.data()
+            as Map<String, dynamic>;
+
+            return shipment['currentStage']
+                == 'warehouse';
+
+          }).toList();
+
+          /// =========================
+          /// COMPLETED
+          /// =========================
+
+          final completedDocs =
+          allDocs.where((doc) {
+
+            final shipment =
+            doc.data()
+            as Map<String, dynamic>;
+
+            return shipment['currentStage']
+                == 'transit';
+
+          }).toList();
+
+          /// =========================
+          /// TOTAL KG
+          /// =========================
+
+          double totalKg = 0;
+
+          for (final doc in warehouseDocs) {
+
+            final shipment =
+            doc.data()
+            as Map<String, dynamic>;
+
+            totalKg +=
+                (shipment['carcassWeight'] ?? 0)
+                    .toDouble();
           }
 
-          return ListView.builder(
+          return SingleChildScrollView(
 
             padding:
-            EdgeInsets.all(16.w),
+            const EdgeInsets.all(16),
 
-            itemCount:
-            shipments.length,
+            child: Column(
 
-            itemBuilder: (_, i) {
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
 
-              final s =
-              shipments[i];
+              children: [
 
-              return Container(
+                /// =========================
+                /// DASHBOARD
+                /// =========================
 
-                margin:
-                EdgeInsets.only(
-                  bottom: 16.h,
+                SizedBox(
+
+                  height: 110,
+
+                  child: Row(
+
+                    children: [
+
+                      Expanded(
+
+                        child: _miniDashboardCard(
+
+                          title: "Incoming",
+
+                          value:
+                          incomingDocs.length.toString(),
+
+                          color: Colors.orange,
+
+                          icon:
+                          Icons.inventory_2_outlined,
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+
+                        child: _miniDashboardCard(
+
+                          title: "Warehouse",
+
+                          value:
+                          warehouseDocs.length.toString(),
+
+                          color: Colors.green,
+
+                          icon:
+                          Icons.warehouse_outlined,
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+
+                        child: _miniDashboardCard(
+
+                          title: "Sent",
+
+                          value:
+                          completedDocs.length.toString(),
+
+                          color: Colors.blue,
+
+                          icon:
+                          Icons.local_shipping_outlined,
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+
+                        child: _miniDashboardCard(
+
+                          title: "KG",
+
+                          value:
+                          totalKg.toStringAsFixed(0),
+
+                          color: Colors.purple,
+
+                          icon:
+                          Icons.scale_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
-                padding:
-                EdgeInsets.all(18.w),
+                const SizedBox(height: 28),
 
-                decoration: BoxDecoration(
+                const Text(
 
-                  color: Colors.white,
+                  "Warehouse Queue",
 
-                  borderRadius:
-                  BorderRadius.circular(
-                    22,
-                  ),
+                  style: TextStyle(
 
-                  border: Border.all(
-                    color:
-                    const Color(
-                      0xFFE2E8F0,
-                    ),
+                    fontSize: 22,
+
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                child: Column(
+                const SizedBox(height: 18),
 
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                /// =========================
+                /// SHIPMENTS
+                /// =========================
 
-                  children: [
+                ...warehouseDocs.map((doc) {
 
-                    Row(
+                  final shipment =
+                  doc.data()
+                  as Map<String, dynamic>;
 
-                      children: [
+                  final meatItems =
+                      shipment['meatItems'] ?? [];
 
-                        Expanded(
+                  double totalMeatWeight = 0;
 
-                          child: Column(
+                  for (final item in meatItems) {
 
-                            crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                    totalMeatWeight +=
+                        (item['weight'] ?? 0)
+                            .toDouble();
+                  }
+
+                  return GestureDetector(
+
+                    onTap: () {
+
+                      Navigator.push(
+
+                        context,
+
+                        MaterialPageRoute(
+
+                          builder: (_) =>
+                              ShipmentDetailScreen(
+                                shipmentId: doc.id,
+                              )
+                        ),
+                      );
+                    },
+
+                    child: Container(
+
+                      margin:
+                      const EdgeInsets.only(
+                        bottom: 18,
+                      ),
+
+                      padding:
+                      const EdgeInsets.all(18),
+
+                      decoration: BoxDecoration(
+
+                        color: Colors.white,
+
+                        borderRadius:
+                        BorderRadius.circular(
+                          24,
+                        ),
+
+                        boxShadow: [
+
+                          BoxShadow(
+
+                            color: Colors.black
+                                .withValues(
+                              alpha: 0.04,
+                            ),
+
+                            blurRadius: 12,
+
+                            offset:
+                            const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+
+                      child: Column(
+
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+
+                        children: [
+
+                          /// HEADER
+
+                          Row(
+
+                            mainAxisAlignment:
+                            MainAxisAlignment
+                                .spaceBetween,
 
                             children: [
 
                               Text(
 
-                                s.shipmentCode ??
-                                    "Shipment",
+                                shipment['shipmentCode']
+                                    ?? '',
 
-                                style: TextStyle(
-                                  fontSize:
-                                  18.sp,
+                                style:
+                                const TextStyle(
+
+                                  fontSize: 22,
 
                                   fontWeight:
                                   FontWeight.bold,
-
-                                  color:
-                                  const Color(
-                                    0xFF0F172A,
-                                  ),
                                 ),
                               ),
 
-                              SizedBox(
-                                height: 4.h,
-                              ),
+                              Container(
 
-                              Text(
-                                "${s.origin} → ${s.destination}",
+                                padding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
 
-                                style: const TextStyle(
-                                  color: Color(0xFF6B7280),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                decoration:
+                                BoxDecoration(
+
+                                  color:
+                                  Colors.green
+                                      .withValues(
+                                    alpha: 0.10,
+                                  ),
+
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                    30,
+                                  ),
+                                ),
+
+                                child: const Text(
+
+                                  "ACTIVE",
+
+                                  style: TextStyle(
+
+                                    color:
+                                    Colors.green,
+
+                                    fontWeight:
+                                    FontWeight.bold,
+
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
 
-                        Container(
+                          const SizedBox(height: 8),
 
-                          padding:
-                          EdgeInsets.symmetric(
-                            horizontal:
-                            12.w,
+                          /// ROUTE
 
-                            vertical:
-                            6.h,
-                          ),
+                          Text(
 
-                          decoration:
-                          BoxDecoration(
-
-                            color:
-                            green.withOpacity(
-                              0.1,
-                            ),
-
-                            borderRadius:
-                            BorderRadius.circular(
-                              30,
-                            ),
-                          ),
-
-                          child: Text(
-
-                            "Ready",
+                            "${shipment['originCountry'] ?? 'N/A'} → ${shipment['destinationCountry'] ?? 'N/A'}",
 
                             style: TextStyle(
+
+                              fontSize: 15,
+
                               color:
-                              green,
+                              Colors.grey.shade600,
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          /// MEAT BREAKDOWN
+
+                          const Text(
+
+                            "Meat Breakdown",
+
+                            style: TextStyle(
 
                               fontWeight:
-                              FontWeight
-                                  .bold,
+                              FontWeight.bold,
+
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
 
-                    SizedBox(height: 18.h),
+                          const SizedBox(height: 14),
 
-                    Row(
+                          ...List.generate(
+                            meatItems.length,
+                                (index) {
 
-                      children: [
+                              final item =
+                              meatItems[index];
 
-                        Expanded(
-                          child: _infoBox(
-                            "Weight",
-                            "${s.weight} kg",
-                            Icons.scale_rounded,
-                            blue,
-                          ),
-                        ),
+                              return Container(
 
-                        SizedBox(width: 10.w),
+                                margin:
+                                const EdgeInsets.only(
+                                  bottom: 10,
+                                ),
 
-                        Expanded(
-                          child: _infoBox(
-                            "Status",
-                            s.status,
-                            Icons.inventory_2,
-                            green,
-                          ),
-                        ),
-                      ],
-                    ),
+                                padding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
 
-                    SizedBox(height: 20.h),
+                                decoration:
+                                BoxDecoration(
 
-                    SizedBox(
+                                  color:
+                                  const Color(
+                                      0xFFF8FAFC),
 
-                      width:
-                      double.infinity,
-
-                      child:
-                      ElevatedButton.icon(
-
-                        onPressed: () {
-
-                          Navigator.push(
-
-                            context,
-
-                            MaterialPageRoute(
-
-                              builder: (_) =>
-                                  WarehouseProcessingScreen(
-                                    shipmentId: s.firestoreId!,
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                    14,
                                   ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.check_circle,
-                        ),
+                                ),
 
-                        label: const Text(
-                          "Confirm Receipt",
-                        ),
+                                child: Row(
 
-                        style:
-                        ElevatedButton.styleFrom(
+                                  children: [
 
-                          backgroundColor:
-                          green,
+                                    Expanded(
 
-                          foregroundColor:
-                          Colors.white,
+                                      child: Text(
 
-                          padding:
-                          EdgeInsets.symmetric(
-                            vertical:
-                            14.h,
+                                        item['name']
+                                            ?? '',
+
+                                        style:
+                                        const TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+
+                                    Text(
+
+                                      "${item['weight']} KG",
+
+                                      style:
+                                      const TextStyle(
+
+                                        fontWeight:
+                                        FontWeight.bold,
+
+                                        color:
+                                        Colors.green,
+
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
 
-                          shape:
-                          RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.circular(
-                              14,
+                          const SizedBox(height: 14),
+
+                          /// TOTAL MEAT
+
+                          Container(
+
+                            padding:
+                            const EdgeInsets.all(14),
+
+                            decoration: BoxDecoration(
+
+                              color: Colors.green
+                                  .withValues(
+                                alpha: 0.08,
+                              ),
+
+                              borderRadius:
+                              BorderRadius.circular(
+                                16,
+                              ),
+                            ),
+
+                            child: Row(
+
+                              children: [
+
+                                const Expanded(
+
+                                  child: Text(
+
+                                    "Total Meat Weight",
+
+                                    style: TextStyle(
+
+                                      fontWeight:
+                                      FontWeight.bold,
+
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+
+                                Text(
+
+                                  "${totalMeatWeight.toStringAsFixed(0)} KG",
+
+                                  style:
+                                  const TextStyle(
+
+                                    color:
+                                    Colors.green,
+
+                                    fontWeight:
+                                    FontWeight.bold,
+
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+
+                          const SizedBox(height: 18),
+
+                          /// BUTTON
+
+                          SizedBox(
+
+                            width: double.infinity,
+
+                            child: ElevatedButton.icon(
+
+                              onPressed: () {
+
+                                Navigator.push(
+
+                                  context,
+
+                                  MaterialPageRoute(
+
+                                    builder: (_) =>
+                                        WarehouseProcessingScreen(
+                                          shipmentId:
+                                          doc.id,
+                                        ),
+                                  ),
+                                );
+                              },
+
+                              icon: const Icon(
+                                Icons.check_circle,
+                              ),
+
+                              label: const Text(
+                                "Process Shipment",
+                              ),
+
+                              style:
+                              ElevatedButton.styleFrom(
+
+                                backgroundColor:
+                                const Color(
+                                    0xFF16A34A),
+
+                                foregroundColor:
+                                Colors.white,
+
+                                padding:
+                                const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+
+                                shape:
+                                RoundedRectangleBorder(
+
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                    16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
+                  );
+                }),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _infoBox(
-      String title,
-      String value,
-      IconData icon,
-      Color color,
-      ) {
+  Widget _miniDashboardCard({
+
+    required String title,
+
+    required String value,
+
+    required Color color,
+
+    required IconData icon,
+  }) {
 
     return Container(
 
-      padding:
-      EdgeInsets.all(14.w),
+      padding: const EdgeInsets.all(12),
 
       decoration: BoxDecoration(
 
-        color:
-        const Color(0xFFF8FAFC),
+        color: Colors.white,
 
         borderRadius:
-        BorderRadius.circular(16),
+        BorderRadius.circular(18),
+
+        boxShadow: [
+
+          BoxShadow(
+
+            color:
+            Colors.black.withValues(
+              alpha: 0.03,
+            ),
+
+            blurRadius: 10,
+
+            offset:
+            const Offset(0, 4),
+          ),
+        ],
       ),
 
-      child: Row(
+      child: Column(
+
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+
+        mainAxisAlignment:
+        MainAxisAlignment.center,
 
         children: [
 
@@ -500,47 +781,118 @@ class WarehouseHomeScreen extends StatelessWidget {
             size: 18,
           ),
 
-          SizedBox(width: 10.w),
+          const Spacer(),
 
-          Expanded(
+          Text(
 
-            child: Column(
+            value,
 
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
+            style: const TextStyle(
 
-              children: [
+              fontSize: 18,
 
-                Text(
+              fontWeight:
+              FontWeight.bold,
+            ),
+          ),
 
-                  title,
+          const SizedBox(height: 2),
 
-                  style:
-                  const TextStyle(
-                    fontSize: 11,
-                    color:
-                    Color(0xFF64748B),
-                  ),
-                ),
+          Text(
 
-                SizedBox(height: 2.h),
+            title,
 
-                Text(
+            style: TextStyle(
 
-                  value,
+              fontSize: 11,
 
-                  overflow:
-                  TextOverflow.ellipsis,
+              color:
+              Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  style:
-                  const TextStyle(
-                    fontWeight:
-                    FontWeight.bold,
-                    color:
-                    Color(0xFF0F172A),
-                  ),
-                ),
-              ],
+  Widget _dashboardCard({
+
+    required String title,
+
+    required String value,
+
+    required Color color,
+
+    required IconData icon,
+  }) {
+
+    return Container(
+
+      padding:
+      const EdgeInsets.all(18),
+
+      decoration: BoxDecoration(
+
+        color: Colors.white,
+
+        borderRadius:
+        BorderRadius.circular(22),
+
+        boxShadow: [
+
+          BoxShadow(
+
+            color:
+            Colors.black.withValues(
+              alpha: 0.04,
+            ),
+
+            blurRadius: 12,
+
+            offset:
+            const Offset(0, 5),
+          ),
+        ],
+      ),
+
+      child: Column(
+
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+
+        children: [
+
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+
+            value,
+
+            style: const TextStyle(
+
+              fontSize: 24,
+
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+
+            title,
+
+            style: TextStyle(
+
+              color: Colors.grey.shade600,
+
+              fontSize: 13,
             ),
           ),
         ],
